@@ -1,4 +1,5 @@
 import "./options.css";
+import {loadOpts, Options, storeOpts} from "./option-tools";
 
 function getElementChecked<T extends HTMLElement>(id: string): T {
     const el = document.getElementById(id);
@@ -15,26 +16,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const statusDiv = getElementChecked<HTMLDivElement>("status");
     const form = getElementChecked<HTMLFormElement>("form");
 
-    chrome.storage.local.get(["url", "user", "pwd"], items => {
-        console.log("Settings loaded", items);
-        urlInput.value = items.url;
-        userInput.value = items.user;
-        pwdInput.value = items.pwd;
+    loadOpts().then(opts => {
+        urlInput.value = opts.url;
+        userInput.value = opts.user;
+        pwdInput.value = opts.pwd;
     });
-
 
     form.addEventListener("submit", e => {
         e.preventDefault();
 
-        const options = {
+        const options: Options = {
             url: urlInput.value,
             user: userInput.value,
             pwd: pwdInput.value
         };
 
         console.log("Saving options...", options);
-        chrome.storage.local.set(options,
-            () => statusDiv.innerText = "Settings has been successfully saved");
+        storeOpts(options).then(() => statusDiv.innerText = "Settings has been successfully saved");
 
     });
 });
