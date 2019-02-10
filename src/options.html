@@ -5,8 +5,31 @@
     <title>ASUS Download Master Chrome Extension options</title>
 </head>
 <body>
-<div class="menu-entry">
-    Options
-</div>
+
+    <form id="form">
+
+        <h1><img src="icon.png" class="icon"> ASUS Download Master Chrome Extension options</h1>
+
+        <div class="option">
+            <label for="url">Application URL</label>
+            <input id="url" placeholder="Application URL" type="text">
+            <div class="clearfix"></div>
+        </div>
+        <div class="option">
+            <label for="user">Username</label>
+            <input id="user" placeholder="User" type="text">
+            <div class="clearfix"></div>
+        </div>
+        <div class="option">
+            <label for="pwd">Password</label>
+            <input id="pwd" placeholder="Password" type="password">
+            <div class="clearfix"></div>
+        </div>
+        <div id="status"></div>
+        <div id="submit">
+            <button type="submit">Save</button>
+        </div>
+    </form>
+
 </body>
 </html>

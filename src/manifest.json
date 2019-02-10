@@ -4,6 +4,7 @@
     "description": "Download files using ASUS Download Master",
     "version": "1.0.0",
     "permissions": [
+        "storage",
         "contextMenus"
     ],
     "content_scripts": [],

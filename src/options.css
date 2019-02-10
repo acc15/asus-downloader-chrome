@@ -1,0 +1,49 @@
+
+.icon {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+html {
+    margin: 0;
+    font-size: 18px;
+}
+
+body {
+    margin: 20px;
+}
+
+.option {
+    margin-bottom: 10px;
+    height: 36px;
+    line-height: 36px;
+}
+
+.clearfix {
+    clear: both;
+}
+
+.option label {
+    width: 200px;
+    float: left;
+}
+.option input {
+    width: 600px;
+    float: left;
+    font-size: 18px;
+    border-radius: 5px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+#status {
+    margin-left: 200px;
+    margin-bottom: 10px;
+    color: darkslateblue;
+}
+
+button[type=submit] {
+    width: 200px;
+    margin-left: 200px;
+    font-size: 18px;
+}
