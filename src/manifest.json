@@ -1,0 +1,22 @@
+{
+    "manifest_version": 2,
+    "name": "ASUS Download Master Chrome Extension",
+    "description": "Download files using ASUS Download Master",
+    "version": "1.0.0",
+    "permissions": [
+        "contextMenus"
+    ],
+    "content_scripts": [],
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": false
+    },
+    "options_page": "options.html",
+    "web_accessible_resources": [],
+    "browser_action": {
+        "default_popup": "popup.html"
+    },
+    "icons": {
+        "99": "icon.png"
+    }
+}

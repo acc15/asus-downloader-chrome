@@ -1,0 +1,28 @@
+
+html, body {
+    margin: 0;
+    font-size: 16px;
+}
+
+.menu-item {
+    background-color: white;
+    padding: 5px;
+    cursor: pointer;
+    width: 150px;
+}
+
+.menu-item:hover {
+    background-color: lightgrey;
+}
+
+.icon {
+    width: 36px;
+    height: 36px;
+    display: inline-block;
+    background-size: 100% auto;
+    vertical-align: middle;
+}
+
+.icon-options {
+    background: url("./options.png");
+}
