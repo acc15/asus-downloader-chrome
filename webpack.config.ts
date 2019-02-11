@@ -1,7 +1,9 @@
+/// <reference path="./reloader.d.ts"/>
+
 import path from 'path';
 import webpack from 'webpack';
 
-// const ChromeExtensionReloader = require('webpack-chrome-extension-reloader');
+import ChromeExtensionReloader from 'webpack-chrome-extension-reloader';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from "html-webpack-plugin";
 
@@ -37,7 +39,13 @@ const config: webpack.Configuration = {
         extensions: ['.tsx', '.ts', '.js']
     },
     plugins: [
-        // new ChromeExtensionReloader(),
+        new ChromeExtensionReloader({
+            entries: {
+                background: 'background',
+                popup: 'popup',
+                options: 'options'
+            }
+        }),
         new CopyWebpackPlugin(['src/manifest.json', 'src/icon.png']),
         new HtmlWebpackPlugin({
             filename: 'popup.html',

@@ -1,16 +1,23 @@
+import queueDownload, {QueueStatus} from "./DownloadMaster";
+import {addNotification} from "./notifications";
 import {defaultOptions, loadOpts, storeOpts} from "./option-tools";
 
-const downloadMenuItemId = "asus-download-master.download";
+const extensionPrefix = "asus-download-master";
 
-async function queueDownload(url: string) {
-    const opts = await loadOpts();
-    console.log("Queue downloading of url and options", url, opts);
+console.log("ASUS Download Master Chrome Extension started...");
 
-
+function getMessageByStatus(url: string, status: QueueStatus) {
+    switch (status) {
+        case QueueStatus.Ok: return "File has been successfully added to download queue";
+        case QueueStatus.Exists: return "Specified torrent file already in download queue";
+        case QueueStatus.LoginFail: return "Login fail. Check extension options and specify valid Download Master URL, Login and password";
+        case QueueStatus.UnknownError: return "Unknown Error. Sorry :(";
+    }
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+const downloadMenuItemId = `${extensionPrefix}.download`;
 
+chrome.runtime.onInstalled.addListener(() => {
     storeOpts(defaultOptions).then(opts => console.log("Default options has been successfully stored", opts));
 
     chrome.contextMenus.create({
@@ -22,7 +29,12 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.onClicked.addListener(item => {
         const url = item.linkUrl;
         if (item.menuItemId === downloadMenuItemId && url) {
-            queueDownload(url).then(() => console.log(`Downloading of (${url}) has been successfully queued...`));
+            loadOpts()
+                .then(opts => queueDownload(url, opts))
+                .then(status => {
+                    console.log(`Queue of (${url}) has been finished with status ${status}...`);
+                    addNotification(getMessageByStatus(url, status));
+                }, err => console.log("Queue error: ", err));
         }
     });
 

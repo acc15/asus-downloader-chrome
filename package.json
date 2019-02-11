@@ -40,5 +40,9 @@
     "webpack": "^4.29.3",
     "webpack-chrome-extension-reloader": "^1.1.2",
     "webpack-cli": "^3.2.3"
+  },
+  "dependencies": {
+    "@types/content-disposition": "^0.5.2",
+    "content-disposition": "^0.5.3"
   }
 }

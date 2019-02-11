@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "permissions": [
         "storage",
-        "contextMenus"
+        "contextMenus",
+        "notifications",
+        "http://*/",
+        "https://*/"
     ],
     "content_scripts": [],
     "background": {
