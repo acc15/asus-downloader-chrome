@@ -1,5 +1,4 @@
 import {ContentDisposition} from "content-disposition";
-import {isNullOrUndefined} from "util";
 import contentDisposition = require("content-disposition");
 
 export type XhrCallback = (xhr: XMLHttpRequest) => void;
