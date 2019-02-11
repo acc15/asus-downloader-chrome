@@ -14,16 +14,13 @@ interface XhrRequest {
 }
 
 function xhr(req: XhrRequest): Promise<XMLHttpRequest> {
-    return new Promise((resolve, reject) => {
-        console.log(`XHR request (method: ${req.method}, url: ${req.url}, headers: ${JSON.stringify(req.headers)}, responseType: ${req.responseType})`, req);
+    console.log(`XHR request (method: ${req.method}, url: ${req.url}, headers: ${JSON.stringify(req.headers)}, responseType: ${req.responseType})`, req);
+    return new Promise<XMLHttpRequest>((resolve, reject) => {
 
         const xhr = new XMLHttpRequest();
 
         xhr.open(req.method, req.url, true);
-        xhr.onload = () => {
-            console.log(`XHR response (method: ${req.method}, url: ${req.url}, status: ${xhr.status}, headers: ${xhr.getAllResponseHeaders()})`);
-            resolve(xhr);
-        };
+        xhr.onload = () => resolve(xhr);
         if (req.headers) {
             for (let k in req.headers) {
                 if (!req.headers.hasOwnProperty(k)) {
@@ -56,6 +53,9 @@ function xhr(req: XhrRequest): Promise<XMLHttpRequest> {
         xhr.onabort = () => resolve(xhr);
         xhr.ontimeout = () => reject(new Error("XHR timeout"));
         xhr.send(req.body);
+    }).then(x => {
+        console.log(`XHR response (method: ${req.method}, url: ${req.url}, status: ${x.status}, headers: ${x.getAllResponseHeaders()})`);
+        return x;
     });
 }
 

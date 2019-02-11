@@ -1,16 +1,33 @@
-import queueDownload, {QueueResult, QueueStatus} from "./DownloadMaster";
+import queueDownload, {FileType, QueueResult, QueueStatus} from "./DownloadMaster";
 import {loadOpts} from "./option-tools";
 
 const extensionPrefix = "asus-download-master";
 
 console.log("ASUS Download Master Chrome Extension started...");
 
+function getSuccessMessagePrefix(result: QueueResult) {
+    switch (result.type) {
+        case FileType.Plain: return `File ${result.fileName}`;
+        case FileType.Ed2k: return `ED2K file (${result.url})`;
+        case FileType.Magnet: return `Magnet URL (${result.url})`;
+        case FileType.Ftp: return `FTP file (${result.url})`;
+        case FileType.Torrent: return `Torrent file '${result.fileName}'`;
+    }
+}
+
 function getMessageByQueueResult(result: QueueResult) {
     switch (result.status) {
-        case QueueStatus.Ok: return "File has been successfully added to download queue";
-        case QueueStatus.Exists: return "Specified torrent file already in download queue";
-        case QueueStatus.LoginFail: return "Login fail. Check extension options and specify valid Download Master URL, Login and password";
-        case QueueStatus.UnknownError: return "Unknown Error. Sorry :(";
+        case QueueStatus.Ok:
+            return getSuccessMessagePrefix(result) + " has been successfully added to download queue";
+
+        case QueueStatus.Exists:
+            return `Torrent file '${result.fileName}' already in download queue`;
+
+        case QueueStatus.LoginFail:
+            return "Login fail. Check extension options and specify valid Download Master URL, Login and Password";
+
+        case QueueStatus.UnknownError:
+            return "Unknown Error. Sorry :(";
     }
 }
 
