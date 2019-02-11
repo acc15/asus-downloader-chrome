@@ -16,26 +16,25 @@ function getMessageByStatus(url: string, status: QueueStatus) {
 }
 
 const downloadMenuItemId = `${extensionPrefix}.download`;
+chrome.contextMenus.create({
+    id: downloadMenuItemId,
+    title: "Download with ASUS Download Master",
+    contexts: ["link"],
+});
+
+chrome.contextMenus.onClicked.addListener(item => {
+    const url = item.linkUrl;
+    if (item.menuItemId === downloadMenuItemId && url) {
+        loadOpts()
+            .then(opts => queueDownload(url, opts))
+            .then(status => {
+                console.log(`Queue of (${url}) has been finished with status ${status}...`);
+                addNotification(getMessageByStatus(url, status));
+            }, err => console.log("Queue error: ", err));
+    }
+});
 
 chrome.runtime.onInstalled.addListener(() => {
     storeOpts(defaultOptions).then(opts => console.log("Default options has been successfully stored", opts));
-
-    chrome.contextMenus.create({
-        id: downloadMenuItemId,
-        title: "Download with ASUS Download Master",
-        contexts: ["link"],
-    });
-
-    chrome.contextMenus.onClicked.addListener(item => {
-        const url = item.linkUrl;
-        if (item.menuItemId === downloadMenuItemId && url) {
-            loadOpts()
-                .then(opts => queueDownload(url, opts))
-                .then(status => {
-                    console.log(`Queue of (${url}) has been finished with status ${status}...`);
-                    addNotification(getMessageByStatus(url, status));
-                }, err => console.log("Queue error: ", err));
-        }
-    });
 
 });
