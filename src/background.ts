@@ -1,6 +1,6 @@
 import queueDownload, {QueueStatus} from "./DownloadMaster";
 import {addNotification} from "./notifications";
-import {defaultOptions, loadOpts, storeOpts} from "./option-tools";
+import {loadOpts} from "./option-tools";
 
 const extensionPrefix = "asus-download-master";
 
@@ -14,6 +14,11 @@ function getMessageByStatus(url: string, status: QueueStatus) {
         case QueueStatus.UnknownError: return "Unknown Error. Sorry :(";
     }
 }
+
+chrome.browserAction.onClicked.addListener(() => {
+    addNotification("abc");
+    // chrome.runtime.openOptionsPage();
+});
 
 const downloadMenuItemId = `${extensionPrefix}.download`;
 chrome.contextMenus.create({

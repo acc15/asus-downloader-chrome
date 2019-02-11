@@ -10,7 +10,6 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 const config: webpack.Configuration = {
     entry: {
         background: './src/background.ts',
-        popup: './src/popup.ts',
         options: "./src/options.ts"
     },
     devtool: "source-map",
@@ -42,16 +41,10 @@ const config: webpack.Configuration = {
         new ChromeExtensionReloader({
             entries: {
                 background: 'background',
-                popup: 'popup',
                 options: 'options'
             }
         }),
         new CopyWebpackPlugin(['src/manifest.json', 'src/icon.png']),
-        new HtmlWebpackPlugin({
-            filename: 'popup.html',
-            template: 'src/popup.html',
-            chunks: ['popup']
-        }),
         new HtmlWebpackPlugin({
             filename: 'options.html',
             template: 'src/options.html',
