@@ -1,6 +1,6 @@
-import {dmConfirmAllFiles, dmLogin, dmUpload, dmUploadLink, UploadStatus} from "./dmclient";
+import {dmConfirmAllFiles, dmLogin, dmQueueTorrent, dmQueueLink, UploadStatus} from "./dmclient";
 import {Options} from "./option-tools";
-import xhr, {getFileNameFromCD} from "./xhr";
+import xhr, {firstNonNull, getFileNameFromCD, getFileNameFromUrl} from "./xhr";
 
 export const enum QueueStatus {
     Ok = "ok",
@@ -9,56 +9,125 @@ export const enum QueueStatus {
     UnknownError = "unknown_error"
 }
 
-async function queueTorrent(url: string, opts: Options): Promise<QueueStatus> {
-    console.log(`Downloading .torrent from ${url}...`);
+export const enum FileType {
+    Torrent = "torrent",
+    Ed2k = "ed2k",
+    Magnet = "magnet",
+    Ftp = "ftp",
+    Plain = "plain"
+}
 
-    const torrentResp = await xhr({ method: "GET", url, responseType: 'blob' });
-    const fileName = getFileNameFromCD(torrentResp.getResponseHeader("Content-Disposition"), "test.torrent");
-    const torrentBlob: Blob = torrentResp.response as Blob;
+interface QueueBase {
+    url: string;
+    opts: Options;
+}
 
-    const uploadBtResp = await dmUpload(torrentBlob, fileName, opts);
+export interface QueueResult extends QueueBase {
+    status: QueueStatus;
+    type?: FileType;
+    fileName?: string;
+}
+
+interface QueueFile extends QueueBase{
+    type: FileType;
+    fileName?: string;
+}
+
+interface QueueTorrent extends QueueBase {
+    fileName: string;
+    blob: Blob;
+}
+
+const notATorrentUrlPrefixes: { [k: string]: FileType } = {
+    "ftp:": FileType.Ftp,
+    "ed2k:": FileType.Ed2k,
+    "magnet:": FileType.Magnet
+};
+
+async function queueTorrent(p: QueueTorrent): Promise<QueueResult> {
+    console.log(`Downloading .torrent from ${p.url}...`);
+
+    const uploadBtResp = await dmQueueTorrent(p.blob, p.fileName, p.opts);
+
+    const result: QueueResult = {
+        url: p.url,
+        opts: p.opts,
+        fileName: p.fileName,
+        type: FileType.Torrent,
+        status: QueueStatus.Ok
+    };
+
     switch (uploadBtResp) {
         case UploadStatus.Success:
-            return QueueStatus.Ok;
+            result.status = QueueStatus.Ok;
+            break;
 
         case UploadStatus.Exists:
-            return QueueStatus.Exists;
+            result.status = QueueStatus.Exists;
+            break;
 
         case UploadStatus.ConfirmFiles:
-            const confirmResp = await dmConfirmAllFiles(fileName, opts);
+            const confirmResp = await dmConfirmAllFiles(p.fileName, p.opts);
             if (!confirmResp) {
-                return QueueStatus.UnknownError;
+                result.status = QueueStatus.UnknownError;
+                break;
             }
-            return QueueStatus.Ok;
+            result.status = QueueStatus.Ok;
+            break;
 
         default:
-            return QueueStatus.UnknownError;
+            result.status = QueueStatus.UnknownError;
+            break;
     }
+    return result;
 }
 
-async function queueFile(url: string, opts: Options): Promise<QueueStatus> {
-    console.log(`Downloading file from ${url}...`);
+async function queueFile(p: QueueFile): Promise<QueueResult> {
+    console.log(`Downloading file from ${p.url}...`);
 
-    const resp = await dmUploadLink(url, opts);
-    return resp ? QueueStatus.Ok : QueueStatus.UnknownError;
+    const resp = await dmQueueLink(p.url, p.opts);
+    const result: QueueResult = {
+        url: p.url,
+        opts: p.opts,
+        fileName: p.fileName,
+        type: p.type,
+        status: QueueStatus.Ok
+    };
+    result.status = resp ? QueueStatus.Ok : QueueStatus.UnknownError;
+    return result;
 }
 
-async function queueDownload(url: string, opts: Options): Promise<QueueStatus> {
+async function queueDownload(url: string, opts: Options): Promise<QueueResult> {
     const loginResp = await dmLogin(opts);
     if (!loginResp) {
-        return QueueStatus.LoginFail;
+        return { url, opts, status: QueueStatus.LoginFail };
     }
 
-    const headResponse = await xhr({method: "HEAD", url});
-    const contentType = headResponse.getResponseHeader("Content-Type");
-    try {
-        return await contentType && contentType !== null && contentType.indexOf("application/x-bittorrent") >= 0
-            ? queueTorrent(url, opts)
-            : queueFile(url, opts);
-    } catch (e) {
-        console.log("Unknown error while adding download to queue", e);
-        return QueueStatus.UnknownError;
+    const notATorrentMatch = Object.keys(notATorrentUrlPrefixes).filter(p => url.indexOf(p) === 0);
+    if (notATorrentMatch.length > 0) {
+        const prefixKey = notATorrentMatch[0];
+        return await queueFile({ url, opts, type: notATorrentUrlPrefixes[prefixKey] });
     }
+
+    const resp = await xhr({
+        method: "GET",
+        url,
+        onHeadersReceived: req => {
+            const contentType = req.getResponseHeader("Content-Type");
+            if (!contentType || contentType.indexOf("application/x-bittorrent") < 0) {
+                console.log("Aborting XHR request as it's not a .torrent", url, contentType);
+                req.abort();
+            }
+        },
+        responseType: "blob"
+    });
+
+    const fileName = firstNonNull(getFileNameFromCD(resp.getResponseHeader("Content-Disposition")), getFileNameFromUrl(url));
+    if (resp.readyState === XMLHttpRequest.UNSENT) {
+        console.log("XHR request was aborted. Queue as simple file", url);
+        return await queueFile({ url, fileName, opts, type: FileType.Plain });
+    }
+    return await queueTorrent({ url, fileName, opts, blob: resp.response as Blob });
 }
 
 export default queueDownload;

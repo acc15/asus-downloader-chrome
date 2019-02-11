@@ -1,13 +1,12 @@
-import queueDownload, {QueueStatus} from "./DownloadMaster";
-import {addNotification} from "./notifications";
+import queueDownload, {QueueResult, QueueStatus} from "./DownloadMaster";
 import {loadOpts} from "./option-tools";
 
 const extensionPrefix = "asus-download-master";
 
 console.log("ASUS Download Master Chrome Extension started...");
 
-function getMessageByStatus(url: string, status: QueueStatus) {
-    switch (status) {
+function getMessageByQueueResult(result: QueueResult) {
+    switch (result.status) {
         case QueueStatus.Ok: return "File has been successfully added to download queue";
         case QueueStatus.Exists: return "Specified torrent file already in download queue";
         case QueueStatus.LoginFail: return "Login fail. Check extension options and specify valid Download Master URL, Login and password";
@@ -15,9 +14,24 @@ function getMessageByStatus(url: string, status: QueueStatus) {
     }
 }
 
+function addNotification(msg: string, optionsButtons: boolean = false) {
+    const opts: chrome.notifications.NotificationOptions = {
+        type: "basic",
+        title: "ASUS Download Master",
+        iconUrl: "icon.png",
+        message: msg,
+        buttons: optionsButtons ? [{ title: "Go to Options"}] : []
+    };
+    chrome.notifications.create(opts);
+}
+
 chrome.browserAction.onClicked.addListener(() => {
-    addNotification("abc");
-    // chrome.runtime.openOptionsPage();
+    chrome.runtime.openOptionsPage();
+});
+
+chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
+    console.log("Notification button clicked", id, btnIdx);
+    chrome.runtime.openOptionsPage();
 });
 
 const downloadMenuItemId = `${extensionPrefix}.download`;
@@ -32,9 +46,12 @@ chrome.contextMenus.onClicked.addListener(item => {
     if (item.menuItemId === downloadMenuItemId && url) {
         loadOpts()
             .then(opts => queueDownload(url, opts))
-            .then(status => {
-                console.log(`Queue of (${url}) has been finished with status ${status}...`);
-                addNotification(getMessageByStatus(url, status));
-            }, err => console.log("Queue error: ", err));
+            .then(result => {
+                console.log(`Queue of (${url}) has been finished`, result);
+                addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
+            }, err => {
+                console.log("Queue error: ", err);
+                addNotification("Unexpected error occurred during adding URL to download queue: " + JSON.stringify(err));
+            });
     }
 });

@@ -1,5 +1,8 @@
 import {ContentDisposition} from "content-disposition";
+import {isNullOrUndefined} from "util";
 import contentDisposition = require("content-disposition");
+
+export type XhrCallback = (xhr: XMLHttpRequest) => void;
 
 interface XhrRequest {
     method: string;
@@ -7,6 +10,7 @@ interface XhrRequest {
     headers?: { [k: string]: string | string[] };
     body?: string | FormData | Blob;
     responseType?: XMLHttpRequestResponseType;
+    onHeadersReceived?: XhrCallback;
 }
 
 function xhr(req: XhrRequest): Promise<XMLHttpRequest> {
@@ -39,9 +43,17 @@ function xhr(req: XhrRequest): Promise<XMLHttpRequest> {
         if (req.responseType) {
             xhr.responseType = req.responseType;
         }
+        if (req.onHeadersReceived) {
+            const onHeadersReceived = req.onHeadersReceived;
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+                    onHeadersReceived(xhr);
+                }
+            }
+        }
         xhr.timeout = 30000;
         xhr.onerror = () => reject(new Error("XHR request error"));
-        xhr.onabort = () => reject(new Error("XHR aborted"));
+        xhr.onabort = () => resolve(xhr);
         xhr.ontimeout = () => reject(new Error("XHR timeout"));
         xhr.send(req.body);
     });
@@ -68,13 +80,36 @@ export function isSuccessfulStatus(status: number): boolean {
     return status >= 200 && status < 300;
 }
 
-export function getFileNameFromCD(cdHeader: string | null, defaultFileName: string): string {
+export function getFileNameFromCD(cdHeader: string | null): string | null {
     if (!cdHeader) {
-        return defaultFileName;
+        return null;
     }
 
     const cd: ContentDisposition = contentDisposition.parse(cdHeader);
-    return cd.parameters && cd.parameters.filename || defaultFileName;
+    return cd.parameters && cd.parameters.filename ? cd.parameters.filename : null;
+}
+
+export function getFileNameFromUrl(url: string): string | null {
+    if (url.length === 0) {
+        return null;
+    }
+
+    let p = new URL(url).pathname;
+
+    const lastSlash = p.lastIndexOf("/");
+    if (lastSlash >= 0) {
+        p = p.substring(lastSlash + 1);
+    }
+    return decodeURIComponent(p);
+}
+
+export function firstNonNull(...values: any[]): any {
+    for (let v of values) {
+        if (v !== null && v !== undefined) {
+            return v;
+        }
+    }
+    return undefined;
 }
 
 export default xhr;

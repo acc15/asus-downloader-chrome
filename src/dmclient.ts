@@ -105,7 +105,7 @@ export const enum UploadStatus {
     Error = "error"
 }
 
-export async function dmUpload(file: Blob, fileName: string, opts: Options): Promise<UploadStatus> {
+export async function dmQueueTorrent(file: Blob, fileName: string, opts: Options): Promise<UploadStatus> {
     const fd = new FormData();
     fd.append("file", file, fileName);
     const resp = await xhr({method: "POST", url: opts.url + "/downloadmaster/dm_uploadbt.cgi", body: fd});
@@ -191,7 +191,7 @@ usb_dm_url: http://cdndl.zaycev.net/63487/3936546/lmfao_-_la_la_la_%28zaycev.net
 t: 0.7478890386712465
 */
 
-export async function dmUploadLink(url: string, opts: Options): Promise<boolean> {
+export async function dmQueueLink(url: string, opts: Options): Promise<boolean> {
     const formData = {
         action_mode: "DM_ADD",
         download_type: 5,
