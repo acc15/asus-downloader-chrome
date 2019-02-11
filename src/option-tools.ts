@@ -10,10 +10,8 @@ export const defaultOptions: Options = {
     pwd: "admin"
 };
 
-const optionKeys: string[] = Object.keys(defaultOptions);
-
 export function loadOpts(): Promise<Options> {
-    return new Promise((resolve, reject) => chrome.storage.local.get(optionKeys, items => {
+    return new Promise((resolve, reject) => chrome.storage.local.get(defaultOptions, items => {
         if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError.message);
         } else {

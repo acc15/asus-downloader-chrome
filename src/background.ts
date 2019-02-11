@@ -33,8 +33,3 @@ chrome.contextMenus.onClicked.addListener(item => {
             }, err => console.log("Queue error: ", err));
     }
 });
-
-chrome.runtime.onInstalled.addListener(() => {
-    storeOpts(defaultOptions).then(opts => console.log("Default options has been successfully stored", opts));
-
-});
