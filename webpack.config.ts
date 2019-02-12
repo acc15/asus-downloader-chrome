@@ -9,59 +9,63 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 
 import pkg from './package.json';
 
-console.log(`Version is ${pkg.version}`);
+function hash<T, V>(values: Array<T>, valueMap: (v: T) => V, keyMap: (v: T) => string = k => String(k)): { [k: string]: V } {
+    return values.reduce<{ [k: string]: V }>((obj, v) => { obj[keyMap(v)] = valueMap(v); return obj; }, {});
+}
 
-const config: webpack.Configuration = {
-    entry: {
-        background: './src/background.ts',
-        options: "./src/options.ts"
-    },
-    devtool: "source-map",
-    module: {
-        rules: [
-            {
-                test: /\.ts$/,
-                use: 'ts-loader',
-                exclude: [/node_modules/, /\.spec\.ts$/]
-            },
-            {
-                test: /\.css$/,
-                use: ['style-loader', 'css-loader']
-            },
-            {
-                test: /\.(png|jpg)$/,
-                use: 'url-loader',
-            },
-            {
-                test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
-                use: 'file-loader'
-            }
-        ]
-    },
-    resolve: {
-        extensions: ['.ts', '.js']
-    },
-    plugins: [
-        new webpack.DefinePlugin({
-            extensionVersion: pkg.version
-        }),
-        new ChromeExtensionReloader({
-            entries: {
-                background: 'background',
-                options: 'options'
-            }
-        }),
-        new CopyWebpackPlugin(['src/manifest.json', 'src/icon.png']),
-        new HtmlWebpackPlugin({
-            filename: 'options.html',
-            template: 'src/options.html',
-            chunks: ['options']
-        })
-    ],
-    output: {
-        filename: '[name].js',
-        path: path.resolve(__dirname, 'dist')
-    }
+export default (env: any, opts: any) => {
+    console.log(`Extension Version: ${pkg.version}`);
+    console.log(`Build mode: ${opts.mode}`);
+
+    const isDev = opts.mode === "development";
+    const entries: Array<string> = ['background', 'options'];
+
+    const config: webpack.Configuration = {
+        entry: hash(entries, k => `./src/${k}.ts`),
+        devtool: "source-map",
+        module: {
+            rules: [
+                {
+                    test: /\.ts$/,
+                    use: 'ts-loader',
+                    exclude: [/node_modules/, /\.spec\.ts$/]
+                },
+                {
+                    test: /\.css$/,
+                    use: ['style-loader', 'css-loader']
+                },
+                {
+                    test: /\.(png|jpg)$/,
+                    use: 'url-loader',
+                },
+                {
+                    test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+                    use: 'file-loader'
+                }
+            ]
+        },
+        resolve: {
+            extensions: ['.ts', '.js']
+        },
+        plugins: [
+            new webpack.DefinePlugin({
+                extensionVersion: pkg.version
+            }),
+            isDev && new ChromeExtensionReloader({
+                entries: hash(entries, k => k),
+            }),
+            new CopyWebpackPlugin(['src/manifest.json', 'src/icon.png']),
+            new HtmlWebpackPlugin({
+                filename: 'options.html',
+                template: 'src/options.html',
+                chunks: ['options']
+            })
+        ],
+        output: {
+            filename: '[name].js',
+            path: path.resolve(__dirname, 'dist')
+        }
+    };
+
+    return config;
 };
-
-export default config;
