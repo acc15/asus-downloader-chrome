@@ -1,6 +1,6 @@
 import {dmConfirmAllFiles, dmLogin, dmQueueTorrent, dmQueueLink, UploadStatus} from "./dmclient";
 import {Options} from "./option-tools";
-import xhr, {firstNonNull, getFileNameFromCD, getFileNameFromUrl} from "./xhr";
+import xhr, {firstNonNull, getFileNameFromCD, getFileNameFromUrl, isTorrentFile, replaceRefererHeader} from "./xhr";
 
 export const enum QueueStatus {
     Ok = "ok",
@@ -97,7 +97,7 @@ async function queueFile(p: QueueFile): Promise<QueueResult> {
     return result;
 }
 
-async function queueDownload(url: string, opts: Options): Promise<QueueResult> {
+async function queueDownload(url: string, referer: string, opts: Options): Promise<QueueResult> {
     const loginResp = await dmLogin(opts);
     if (!loginResp) {
         return { url, opts, status: QueueStatus.LoginFail };
@@ -112,10 +112,12 @@ async function queueDownload(url: string, opts: Options): Promise<QueueResult> {
     const resp = await xhr({
         method: "GET",
         url,
+        headers: {
+            [replaceRefererHeader]: referer
+        },
         onHeadersReceived: req => {
-            const contentType = req.getResponseHeader("Content-Type");
-            if (!contentType || contentType.indexOf("application/x-bittorrent") < 0) {
-                console.log("Aborting XHR request as it's not a .torrent", url, contentType);
+            if (!isTorrentFile(req)) {
+                console.log("Aborting XHR request as it's not a .torrent", url);
                 req.abort();
             }
         },

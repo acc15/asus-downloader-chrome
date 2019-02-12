@@ -1,5 +1,6 @@
 import queueDownload, {FileType, QueueResult, QueueStatus} from "./DownloadMaster";
 import {loadOpts} from "./option-tools";
+import {initRequestFiltering} from "./xhr";
 
 const extensionPrefix = "asus-download-master";
 
@@ -42,6 +43,8 @@ function addNotification(msg: string, optionsButtons: boolean = false) {
     chrome.notifications.create(opts);
 }
 
+initRequestFiltering();
+
 chrome.browserAction.onClicked.addListener(() => {
     chrome.runtime.openOptionsPage();
 });
@@ -62,7 +65,7 @@ chrome.contextMenus.onClicked.addListener(item => {
     const url = item.linkUrl;
     if (item.menuItemId === downloadMenuItemId && url) {
         loadOpts()
-            .then(opts => queueDownload(url, opts))
+            .then(opts => queueDownload(url, item.pageUrl, opts))
             .then(result => {
                 console.log(`Queue of (${url}) has been finished`, result);
                 addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
