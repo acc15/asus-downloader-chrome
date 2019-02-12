@@ -7,6 +7,10 @@ import ChromeExtensionReloader from 'webpack-chrome-extension-reloader';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from "html-webpack-plugin";
 
+import pkg from './package.json';
+
+console.log(`Version is ${pkg.version}`);
+
 const config: webpack.Configuration = {
     entry: {
         background: './src/background.ts',
@@ -16,9 +20,9 @@ const config: webpack.Configuration = {
     module: {
         rules: [
             {
-                test: /\.tsx?$/,
+                test: /\.ts$/,
                 use: 'ts-loader',
-                exclude: /node_modules/
+                exclude: [/node_modules/, /\.spec\.ts$/]
             },
             {
                 test: /\.css$/,
@@ -35,9 +39,12 @@ const config: webpack.Configuration = {
         ]
     },
     resolve: {
-        extensions: ['.tsx', '.ts', '.js']
+        extensions: ['.ts', '.js']
     },
     plugins: [
+        new webpack.DefinePlugin({
+            extensionVersion: pkg.version
+        }),
         new ChromeExtensionReloader({
             entries: {
                 background: 'background',
