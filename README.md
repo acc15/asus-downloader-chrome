@@ -20,6 +20,12 @@ Password - router admin password
 
 Provided credentials won't be send anywere and will stored only on your current machine.
 
+## Usage
+
+Right-click on any link and select 'Download with ASUS Download Master'. 
+Torrent files are auto-detected so you don't need to worry about this.
+You will see notification about success or error.
+
 ## Supported versions
 
 Tested on RT-AC88U and Download Master ver. 3.1.0.104

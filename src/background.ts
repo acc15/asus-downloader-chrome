@@ -70,8 +70,8 @@ chrome.contextMenus.onClicked.addListener(item => {
                 console.log(`Queue of (${url}) has been finished`, result);
                 addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
             }, err => {
-                console.log("Queue error: ", err);
-                addNotification("Unexpected error occurred during adding URL to download queue: " + JSON.stringify(err));
+                console.log("Queue error", err);
+                addNotification("Unexpected error occurred during adding URL to download queue");
             });
     }
 });
