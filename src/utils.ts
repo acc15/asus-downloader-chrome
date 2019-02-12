@@ -32,7 +32,7 @@ export function getFileNameFromUrl(url: string): string | null {
 }
 
 export function firstNonNull(...values: any[]): any {
-    for (let v of values) {
+    for (const v of values) {
         if (v !== null && v !== undefined) {
             return v;
         }
@@ -49,7 +49,7 @@ export function isTorrentFile(req: XMLHttpRequest): boolean {
     if (contentType.indexOf("application/x-bittorrent") >= 0) {
         return true;
     }
-    if (contentType.indexOf('application/force-download') < 0) {
+    if (contentType.indexOf("application/force-download") < 0) {
         return false;
     }
 

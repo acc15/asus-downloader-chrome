@@ -1,6 +1,6 @@
 {
     "name": "asus-download-master-chrome",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "description": "ASUS Download Master Chrome Extension",
     "scripts": {
         "start": "webpack --mode=development --watch",
@@ -43,6 +43,8 @@
         "style-loader": "^0.23.1",
         "ts-loader": "^5.3.3",
         "ts-node": "^8.0.2",
+        "tslint": "^5.12.1",
+        "tslint-webpack-plugin": "^2.0.2",
         "typescript": "^3.3.3",
         "url-loader": "^1.1.2",
         "webpack": "^4.29.3",

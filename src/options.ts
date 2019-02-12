@@ -1,5 +1,5 @@
-import "./options.css";
 import {loadOpts, Options, storeOpts} from "./option-tools";
+import "./options.css";
 
 function getElementChecked<T extends HTMLElement>(id: string): T {
     const el = document.getElementById(id);
@@ -36,4 +36,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 });
-

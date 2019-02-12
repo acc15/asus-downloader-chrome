@@ -1,5 +1,3 @@
-
-
 export type XhrCallback = (xhr: XMLHttpRequest) => void;
 
 export const replaceRefererHeader = "X-Replace-Referer";
@@ -14,63 +12,62 @@ interface XhrRequest {
 }
 
 function xhr(req: XhrRequest): Promise<XMLHttpRequest> {
-    console.log(`XHR request (method: ${req.method}, url: ${req.url}, headers: ${JSON.stringify(req.headers)}, responseType: ${req.responseType})`, req);
+    console.log("XHR request", req);
 
     const requiresFiltering = req.headers && req.headers[replaceRefererHeader];
     return new Promise<XMLHttpRequest>((resolve, reject) => {
 
-        const xhr = new XMLHttpRequest();
+        const q = new XMLHttpRequest();
 
-        xhr.open(req.method, req.url, true);
-        xhr.onload = () => resolve(xhr);
+        q.open(req.method, req.url, true);
+        q.onload = () => resolve(q);
         if (req.headers) {
-            for (let k in req.headers) {
+            for (const k in req.headers) {
                 if (!req.headers.hasOwnProperty(k)) {
                     continue;
                 }
                 const v = req.headers[k];
                 if (Array.isArray(v)) {
                     for (const h of v) {
-                        xhr.setRequestHeader(k, h);
+                        q.setRequestHeader(k, h);
                     }
                 } else {
-                    xhr.setRequestHeader(k, v);
+                    q.setRequestHeader(k, v);
                 }
             }
         }
 
         if (req.responseType) {
-            xhr.responseType = req.responseType;
+            q.responseType = req.responseType;
         }
         if (req.onHeadersReceived) {
             const onHeadersReceived = req.onHeadersReceived;
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-                    onHeadersReceived(xhr);
+            q.onreadystatechange = () => {
+                if (q.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+                    onHeadersReceived(q);
                 }
-            }
+            };
         }
-        xhr.timeout = 30000;
-        xhr.onerror = () => reject(new Error("XHR request error"));
-        xhr.onabort = () => resolve(xhr);
-        xhr.ontimeout = () => reject(new Error("XHR timeout"));
+        q.timeout = 30000;
+        q.onerror = () => reject(new Error("XHR request error"));
+        q.onabort = () => resolve(q);
+        q.ontimeout = () => reject(new Error("XHR timeout"));
 
         if (requiresFiltering) {
             startRequestFiltering();
         }
-        xhr.send(req.body);
+        q.send(req.body);
     })
     .finally(() => {
         if (requiresFiltering) {
             stopRequestFiltering();
         }
     })
-    .then(x => {
-        console.log(`XHR response (method: ${req.method}, url: ${req.url}, status: ${x.status}, headers: ${x.getAllResponseHeaders()})`);
-        return x;
+    .then(q => {
+        console.log(`XHR response (method: ${req.method}, url: ${req.url}, status: ${q.status}, headers: ${q.getAllResponseHeaders()})`);
+        return q;
     });
 }
-
 
 let webRequestFilterRequests: number = 0;
 
@@ -87,7 +84,7 @@ export function initRequestFiltering() {
 
         console.log("onBeforeSendHeaders original headers", headers);
 
-        const filteredToReplaceIndex = headers.findIndex(header => header.name === replaceRefererHeader);
+        const filteredToReplaceIndex = headers.findIndex(h => h.name === replaceRefererHeader);
         if (filteredToReplaceIndex < 0) {
             return;
         }

@@ -31,4 +31,3 @@ export function storeOpts(opts: Options): Promise<Options> {
         });
     });
 }
-

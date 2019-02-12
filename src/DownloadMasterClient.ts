@@ -10,9 +10,14 @@ export async function dmLogin(opts: Options): Promise<boolean> {
         directurl: "/downloadmaster/task.asp"
     };
     console.log("Login form-data", fd);
-    const resp = await xhr({ method: "POST", url: opts.url + "/check.asp", headers: {
-        "Content-type": 'application/x-www-form-urlencoded'
-    }, body: toUrlEncodedFormData(fd)});
+    const resp = await xhr({
+        method: "POST",
+        url: opts.url + "/check.asp",
+        headers: {
+            "Content-type": "application/x-www-form-urlencoded"
+        },
+        body: toUrlEncodedFormData(fd)
+    });
     return isSuccessfulStatus(resp.status);
 }
 
@@ -46,7 +51,10 @@ export async function dmConfirmAllFiles(fileName: string, opts: Options): Promis
         D_type: "3",
         t: "0.36825365996235604"
     };
-    const resp = await xhr({method: "GET", url: opts.url + "/downloadmaster/dm_uploadbt.cgi?" + toUrlEncodedFormData(formData)});
+    const resp = await xhr({
+        method: "GET",
+        url: opts.url + "/downloadmaster/dm_uploadbt.cgi?" + toUrlEncodedFormData(formData)
+    });
     return isSuccessfulStatus(resp.status);
 }
 
@@ -58,6 +66,9 @@ export async function dmQueueLink(url: string, opts: Options): Promise<boolean> 
         usb_dm_url: url,
         t: "0.7478890386712465"
     };
-    const resp = await xhr({method: "GET", url: opts.url + "/downloadmaster/dm_apply.cgi?" + toUrlEncodedFormData(formData)});
+    const resp = await xhr({
+        method: "GET",
+        url: opts.url + "/downloadmaster/dm_apply.cgi?" + toUrlEncodedFormData(formData)
+    });
     return isSuccessfulStatus(resp.status);
 }

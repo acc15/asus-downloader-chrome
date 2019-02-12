@@ -1,4 +1,4 @@
-import {dmConfirmAllFiles, dmLogin, dmQueueTorrent, dmQueueLink, UploadStatus} from "./DownloadMasterClient";
+import {dmConfirmAllFiles, dmLogin, dmQueueLink, dmQueueTorrent, UploadStatus} from "./DownloadMasterClient";
 import {Options} from "./option-tools";
 import {firstNonNull, getFileNameFromCD, getFileNameFromUrl, isTorrentFile} from "./utils";
 import xhr, {replaceRefererHeader} from "./xhr";
@@ -29,7 +29,7 @@ export interface QueueResult extends QueueBase {
     fileName?: string;
 }
 
-interface QueueFile extends QueueBase{
+interface QueueFile extends QueueBase {
     type: FileType;
     fileName?: string;
 }
@@ -101,13 +101,13 @@ async function queueFile(p: QueueFile): Promise<QueueResult> {
 async function queueDownload(url: string, referer: string, opts: Options): Promise<QueueResult> {
     const loginResp = await dmLogin(opts);
     if (!loginResp) {
-        return { url, opts, status: QueueStatus.LoginFail };
+        return {url, opts, status: QueueStatus.LoginFail};
     }
 
     const notATorrentMatch = Object.keys(notATorrentUrlPrefixes).filter(p => url.indexOf(p) === 0);
     if (notATorrentMatch.length > 0) {
         const prefixKey = notATorrentMatch[0];
-        return await queueFile({ url, opts, type: notATorrentUrlPrefixes[prefixKey] });
+        return await queueFile({url, opts, type: notATorrentUrlPrefixes[prefixKey]});
     }
 
     const resp = await xhr({
@@ -125,12 +125,15 @@ async function queueDownload(url: string, referer: string, opts: Options): Promi
         responseType: "blob"
     });
 
-    const fileName = firstNonNull(getFileNameFromCD(resp.getResponseHeader("Content-Disposition")), getFileNameFromUrl(url));
+    const fileName = firstNonNull(
+        getFileNameFromCD(resp.getResponseHeader("Content-Disposition")),
+        getFileNameFromUrl(url)
+    );
     if (resp.readyState === XMLHttpRequest.UNSENT) {
         console.log("XHR request was aborted. Queue as simple file", url);
-        return await queueFile({ url, fileName, opts, type: FileType.Plain });
+        return await queueFile({url, fileName, opts, type: FileType.Plain});
     }
-    return await queueTorrent({ url, fileName, opts, blob: resp.response as Blob });
+    return await queueTorrent({url, fileName, opts, blob: resp.response as Blob});
 }
 
 export default queueDownload;
