@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
-    "name": "ASUS Download Master Chrome Extension",
-    "description": "Download files using ASUS Download Master",
-    "version": "1.0.0",
+    "name": "${description}",
+    "description": "Simplifies adding torrent, ed2k, ftp files to ASUS Download Master queue",
+    "version": "${version}",
     "permissions": [
         "storage",
         "contextMenus",

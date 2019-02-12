@@ -1,26 +1,30 @@
 /// <reference path="./reloader.d.ts"/>
 
-import path from 'path';
-import webpack from 'webpack';
-
-import ChromeExtensionReloader from 'webpack-chrome-extension-reloader';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from "html-webpack-plugin";
+import path from "path";
+import webpack from 'webpack';
+import ChromeExtensionReloader from "webpack-chrome-extension-reloader";
 
 import pkg from './package.json';
+import _ from "lodash";
 
 function hash<T, V>(values: Array<T>, valueMap: (v: T) => V, keyMap: (v: T) => string = k => String(k)): { [k: string]: V } {
     return values.reduce<{ [k: string]: V }>((obj, v) => { obj[keyMap(v)] = valueMap(v); return obj; }, {});
 }
 
-export default (env: any, opts: any) => {
+interface WebpackOpts {
+    mode: string;
+}
+
+export default (env: undefined, opts: WebpackOpts) => {
     console.log(`Extension Version: ${pkg.version}`);
     console.log(`Build mode: ${opts.mode}`);
 
     const isDev = opts.mode === "development";
     const entries: Array<string> = ['background', 'options'];
 
-    const config: webpack.Configuration = {
+    return {
         entry: hash(entries, k => `./src/${k}.ts`),
         devtool: "source-map",
         module: {
@@ -54,18 +58,22 @@ export default (env: any, opts: any) => {
             isDev && new ChromeExtensionReloader({
                 entries: hash(entries, k => k),
             }),
-            new CopyWebpackPlugin(['src/manifest.json', 'src/icon.png']),
+            new CopyWebpackPlugin([
+                {
+                    from: 'src/manifest.json',
+                    transform: content => _.template(content)(pkg)
+                },
+                { from: 'src/icon.png' }
+            ]),
             new HtmlWebpackPlugin({
                 filename: 'options.html',
                 template: 'src/options.html',
                 chunks: ['options']
             })
-        ],
+        ].filter(Boolean),
         output: {
             filename: '[name].js',
             path: path.resolve(__dirname, 'dist')
         }
     };
-
-    return config;
 };
