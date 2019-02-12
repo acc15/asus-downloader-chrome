@@ -1,6 +1,7 @@
-import {dmConfirmAllFiles, dmLogin, dmQueueTorrent, dmQueueLink, UploadStatus} from "./dmclient";
+import {dmConfirmAllFiles, dmLogin, dmQueueTorrent, dmQueueLink, UploadStatus} from "./DownloadMasterClient";
 import {Options} from "./option-tools";
-import xhr, {firstNonNull, getFileNameFromCD, getFileNameFromUrl, isTorrentFile, replaceRefererHeader} from "./xhr";
+import {firstNonNull, getFileNameFromCD, getFileNameFromUrl, isTorrentFile} from "./utils";
+import xhr, {replaceRefererHeader} from "./xhr";
 
 export const enum QueueStatus {
     Ok = "ok",
