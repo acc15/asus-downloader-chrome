@@ -3,14 +3,14 @@
 Simplifies adding torrent, ed2k, ftp files to ASUS Download Master queue.
 Adds context menu for every link which allows to quickly download file.
 
-# Installation
+## Installation
 
-## Download Master
+### Download Master
 
 Make sure you have an ASUS router with Download Master installed and running.
 If Download Master not installed follow this tutorial: https://www.asus.com/support/FAQ/114001
 
-## Options
+### Options
 
 Before you proceed you must specify several options by clicking on extension icon
 
@@ -20,15 +20,15 @@ Password - router admin password
 
 Provided credentials won't be send anywere and will stored only on your current machine.
 
-# Supported versions
+## Supported versions
 
 Tested on RT-AC88U and Download Master ver. 3.1.0.104
 
-# There is already 3 similar extensions
+## There is already 3 similar extensions
 
 I know. They all not working now.
 
-# Sources
+## Sources
 
 It's opensource, so you can make sure you are safe :)
 
