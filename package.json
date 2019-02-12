@@ -1,5 +1,5 @@
 {
-    "name": "asus-download-master-chrome",
+    "name": "asus-downloader-chrome",
     "version": "0.0.1",
     "description": "ASUS Download Master Chrome Extension",
     "scripts": {
