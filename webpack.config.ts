@@ -25,9 +25,9 @@ export default (env: undefined, opts: WebpackOpts) => {
     const isDev = opts.mode === "development";
     const entries: Array<string> = ['background', 'options'];
 
-    return {
+    const config: webpack.Configuration = {
         entry: hash(entries, k => `./src/${k}.ts`),
-        devtool: "source-map",
+        devtool: isDev ? "source-map" : false,
         module: {
             rules: [
                 {
@@ -78,6 +78,11 @@ export default (env: undefined, opts: WebpackOpts) => {
         output: {
             filename: '[name].js',
             path: path.resolve(__dirname, `dist/${pkg.name}`)
+        },
+        optimization: {
+            minimize: false
         }
     };
+
+    return config;
 };
