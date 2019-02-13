@@ -19,6 +19,9 @@
     "options_page": "options.html",
     "browser_action": {},
     "icons": {
-        "66": "icon.png"
+        "16": "icon16.png",
+        "32": "icon32.png",
+        "64": "icon64.png",
+        "128": "icon128.png"
     }
 }

@@ -67,7 +67,7 @@ export default (env: undefined, opts: WebpackOpts) => {
                     from: 'src/manifest.json',
                     transform: content => _.template(content)(pkg)
                 },
-                { from: 'src/icon.png' }
+                { from: { glob: 'src/icon*.png' }, flatten: true }
             ]),
             new HtmlWebpackPlugin({
                 filename: 'options.html',
@@ -77,7 +77,7 @@ export default (env: undefined, opts: WebpackOpts) => {
         ].filter(Boolean),
         output: {
             filename: '[name].js',
-            path: path.resolve(__dirname, 'dist')
+            path: path.resolve(__dirname, `dist/${pkg.name}`)
         }
     };
 };
