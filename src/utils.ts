@@ -41,15 +41,17 @@ export function firstNonNull(...values: any[]): any {
 }
 
 export function isTorrentFile(req: XMLHttpRequest): boolean {
+    const torrentContentType = "application/x-bittorrent";
+    const probablyTorrentContentTypes = ["application/octet_stream", "application/force-download"];
+
     const contentType = req.getResponseHeader("Content-Type");
     if (!contentType) {
         return false;
     }
-
-    if (contentType.indexOf("application/x-bittorrent") >= 0) {
+    if (contentType.indexOf(torrentContentType) >= 0) {
         return true;
     }
-    if (contentType.indexOf("application/force-download") < 0) {
+    if (!probablyTorrentContentTypes.some(c => contentType.indexOf(c) >= 0)) {
         return false;
     }
 
