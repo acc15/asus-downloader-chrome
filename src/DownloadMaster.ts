@@ -1,6 +1,6 @@
 import {dmConfirmAllFiles, dmLogin, dmQueueLink, dmQueueTorrent, UploadStatus} from "./DownloadMasterClient";
 import {Options} from "./option-tools";
-import {firstNonNull, getFileNameFromCD, getFileNameFromUrl, isTorrentFile} from "./utils";
+import {firstNonNull, getFileNameFromContentDisposition, getFileNameFromUrl, isTorrentFile} from "./utils";
 import xhr, {replaceRefererHeader} from "./xhr";
 
 export const enum QueueStatus {
@@ -110,6 +110,8 @@ async function queueDownload(url: string, referer: string, opts: Options): Promi
         return await queueFile({url, opts, type: notATorrentUrlPrefixes[prefixKey]});
     }
 
+    let fileName: string = "";
+
     const resp = await xhr({
         method: "GET",
         url,
@@ -117,7 +119,8 @@ async function queueDownload(url: string, referer: string, opts: Options): Promi
             [replaceRefererHeader]: referer
         },
         onHeadersReceived: req => {
-            if (!isTorrentFile(req)) {
+            fileName = firstNonNull(getFileNameFromContentDisposition(req), getFileNameFromUrl(url));
+            if (!isTorrentFile(req, fileName)) {
                 console.log("Aborting XHR request as it's not a .torrent", url);
                 req.abort();
             }
@@ -125,10 +128,6 @@ async function queueDownload(url: string, referer: string, opts: Options): Promi
         responseType: "blob"
     });
 
-    const fileName = firstNonNull(
-        getFileNameFromCD(resp.getResponseHeader("Content-Disposition")),
-        getFileNameFromUrl(url)
-    );
     if (resp.readyState === XMLHttpRequest.UNSENT) {
         console.log("XHR request was aborted. Queue as simple file", url);
         return await queueFile({url, fileName, opts, type: FileType.Plain});

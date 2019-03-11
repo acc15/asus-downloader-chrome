@@ -1,4 +1,5 @@
 import contentDisposition, {ContentDisposition} from "content-disposition";
+import undefinedError = Mocha.utils.undefinedError;
 
 export function toUrlEncodedFormData(obj: { [k: string]: string | number }): string {
     return Object.keys(obj).map(k => encodeURIComponent(k) + "=" + encodeURIComponent(String(obj[k]))).join("&");
@@ -8,13 +9,17 @@ export function isSuccessfulStatus(status: number): boolean {
     return status >= 200 && status < 300;
 }
 
-export function getFileNameFromCD(cdHeader: string | null): string | null {
-    if (!cdHeader) {
-        return null;
+export function getFileNameFromContentDispositionHeader(header: string | null): string | undefined {
+    if (!header) {
+        return undefined;
     }
 
-    const cd: ContentDisposition = contentDisposition.parse(cdHeader);
-    return cd.parameters && cd.parameters.filename ? cd.parameters.filename : null;
+    const cd: ContentDisposition = contentDisposition.parse(header);
+    return cd.parameters && cd.parameters.filename ? cd.parameters.filename : undefined;
+}
+
+export function getFileNameFromContentDisposition(req: XMLHttpRequest): string | undefined {
+    return getFileNameFromContentDispositionHeader(req.getResponseHeader("Content-Disposition"));
 }
 
 export function getFileNameFromUrl(url: string): string | null {
@@ -40,21 +45,19 @@ export function firstNonNull(...values: any[]): any {
     return undefined;
 }
 
-export function isTorrentFile(req: XMLHttpRequest): boolean {
-    const torrentContentType = "application/x-bittorrent";
-    const probablyTorrentContentTypes = ["application/octet_stream", "application/force-download"];
+export function isTorrentFile(req: XMLHttpRequest, fileName: string | undefined): boolean {
+    const probablyTorrentContentTypes = [
+        "application/x-bittorrent",
+        "application/octet_stream",
+        "application/force-download"
+    ];
 
     const contentType = req.getResponseHeader("Content-Type");
     if (!contentType) {
         return false;
     }
-    if (contentType.indexOf(torrentContentType) >= 0) {
-        return true;
-    }
     if (!probablyTorrentContentTypes.some(c => contentType.indexOf(c) >= 0)) {
         return false;
     }
-
-    const fileName = getFileNameFromCD(req.getResponseHeader("Content-Disposition"));
-    return fileName !== null && fileName.endsWith(".torrent");
+    return fileName ? fileName.endsWith(".torrent") : false;
 }
