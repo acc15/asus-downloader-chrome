@@ -14,11 +14,11 @@ If Download Master not installed follow this tutorial: https://www.asus.com/supp
 
 Before you proceed you must specify several options by clicking on extension icon
 
-Application URL - URL to Download Master application (usually its http://router.asus.com:8081)
-Username - router admin username
-Password - router admin password
+* Application URL - URL to Download Master application (usually its http://router.asus.com:8081)
+* Username - router admin username
+* Password - router admin password
 
-Provided credentials won't be send anywere and will stored only on your current machine.
+Provided credentials won't be send anywere and will be stored only on your current machine.
 
 ## Usage
 
