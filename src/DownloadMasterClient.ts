@@ -25,6 +25,7 @@ export const enum UploadStatus {
     Success = "success",
     ConfirmFiles = "confirm_files",
     Exists = "exists",
+    TaskLimit = "task_limit",
     Error = "error"
 }
 
@@ -35,10 +36,14 @@ export async function dmQueueTorrent(file: Blob, fileName: string, opts: Options
     if (!isSuccessfulStatus(resp.status)) {
         return UploadStatus.Error;
     }
-    if (resp.responseText.indexOf("BT_EXISTS") >= 0) {
+    const text = resp.responseText;
+    if (text.indexOf("TOTAL_FULL") >= 0) {
+        return UploadStatus.TaskLimit;
+    }
+    if (text.indexOf("BT_EXISTS") >= 0) {
         return UploadStatus.Exists;
     }
-    if (resp.responseText.indexOf("BT_ACK_SUCESS=") >= 0) {
+    if (text.indexOf("BT_ACK_SUCESS=") >= 0) {
         return UploadStatus.ConfirmFiles;
     }
     return UploadStatus.Success;

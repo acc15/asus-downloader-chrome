@@ -27,6 +27,11 @@ function getMessageByQueueResult(result: QueueResult) {
         case QueueStatus.LoginFail:
             return "Login fail. Check extension options and specify valid Download Master URL, Login and Password";
 
+        case QueueStatus.TaskLimit:
+            return "Download Master task limit reached (30 active tasks max). " +
+                "Wait until other tasks will finish or cancel them manually. " +
+                "This is limitation of ASUS Download Master. ";
+
         case QueueStatus.UnknownError:
             return "Unknown Error. Sorry :(";
     }

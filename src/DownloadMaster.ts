@@ -7,6 +7,7 @@ export const enum QueueStatus {
     Ok = "ok",
     Exists = "already_exists",
     LoginFail = "login_fail",
+    TaskLimit = "task_limit",
     UnknownError = "unknown_error"
 }
 
@@ -74,6 +75,10 @@ async function queueTorrent(p: QueueTorrent): Promise<QueueResult> {
                 break;
             }
             result.status = QueueStatus.Ok;
+            break;
+
+        case UploadStatus.TaskLimit:
+            result.status = QueueStatus.TaskLimit;
             break;
 
         default:
