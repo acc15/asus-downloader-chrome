@@ -1,8 +1,11 @@
 import contentDisposition, {ContentDisposition} from "content-disposition";
-import undefinedError = Mocha.utils.undefinedError;
 
-export function toUrlEncodedFormData(obj: { [k: string]: string | number }): string {
-    return Object.keys(obj).map(k => encodeURIComponent(k) + "=" + encodeURIComponent(String(obj[k]))).join("&");
+export function toUrlEncodedPair(key: string, value: any) {
+    return encodeURIComponent(key) + "=" + (value !== null && value !== undefined ? encodeURIComponent(String(value)) : "");
+}
+
+export function toUrlEncodedFormData(obj: { [k: string]: any }): string {
+    return Object.keys(obj).map(k => toUrlEncodedPair(k, obj[k])).join("&");
 }
 
 export function isSuccessfulStatus(status: number): boolean {
@@ -22,9 +25,9 @@ export function getFileNameFromContentDisposition(req: XMLHttpRequest): string |
     return getFileNameFromContentDispositionHeader(req.getResponseHeader("Content-Disposition"));
 }
 
-export function getFileNameFromUrl(url: string): string | null {
+export function getFileNameFromUrl(url: string): string | undefined {
     if (url.length === 0) {
-        return null;
+        return undefined;
     }
 
     let p = new URL(url).pathname;
@@ -36,18 +39,10 @@ export function getFileNameFromUrl(url: string): string | null {
     return decodeURIComponent(p);
 }
 
-export function firstNonNull(...values: any[]): any {
-    for (const v of values) {
-        if (v !== null && v !== undefined) {
-            return v;
-        }
-    }
-    return undefined;
-}
-
 export function isTorrentFile(req: XMLHttpRequest, fileName: string | undefined): boolean {
     const probablyTorrentContentTypes = [
         "application/x-bittorrent",
+        "application/octet-stream",
         "application/octet_stream",
         "application/force-download"
     ];

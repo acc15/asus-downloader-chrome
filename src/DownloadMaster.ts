@@ -1,6 +1,6 @@
 import {dmConfirmAllFiles, dmLogin, dmQueueLink, dmQueueTorrent, UploadStatus} from "./DownloadMasterClient";
 import {Options} from "./option-tools";
-import {firstNonNull, getFileNameFromContentDisposition, getFileNameFromUrl, isTorrentFile} from "./utils";
+import {getFileNameFromContentDisposition, getFileNameFromUrl, isTorrentFile} from "./utils";
 import xhr, {replaceRefererHeader} from "./xhr";
 
 export const enum QueueStatus {
@@ -19,7 +19,7 @@ export const enum FileType {
     Plain = "plain"
 }
 
-interface QueueBase {
+export interface QueueBase {
     url: string;
     opts: Options;
 }
@@ -30,13 +30,13 @@ export interface QueueResult extends QueueBase {
     fileName?: string;
 }
 
-interface QueueFile extends QueueBase {
+export interface QueueFile extends QueueBase {
     type: FileType;
     fileName?: string;
 }
 
-interface QueueTorrent extends QueueBase {
-    fileName: string;
+export interface QueueTorrent extends QueueBase {
+    fileName?: string;
     blob: Blob;
 }
 
@@ -49,7 +49,7 @@ const notATorrentUrlPrefixes: { [k: string]: FileType } = {
 async function queueTorrent(p: QueueTorrent): Promise<QueueResult> {
     console.log(`Downloading .torrent from ${p.url}...`);
 
-    const uploadBtResp = await dmQueueTorrent(p.blob, p.fileName, p.opts);
+    const uploadBtResp = await dmQueueTorrent(p);
 
     const result: QueueResult = {
         url: p.url,
@@ -69,7 +69,7 @@ async function queueTorrent(p: QueueTorrent): Promise<QueueResult> {
             break;
 
         case UploadStatus.ConfirmFiles:
-            const confirmResp = await dmConfirmAllFiles(p.fileName, p.opts);
+            const confirmResp = await dmConfirmAllFiles(p);
             if (!confirmResp) {
                 result.status = QueueStatus.UnknownError;
                 break;
@@ -115,7 +115,7 @@ async function queueDownload(url: string, referer: string, opts: Options): Promi
         return await queueFile({url, opts, type: notATorrentUrlPrefixes[prefixKey]});
     }
 
-    let fileName: string = "";
+    let fileName: string | undefined = undefined;
 
     const resp = await xhr({
         method: "GET",
@@ -124,7 +124,7 @@ async function queueDownload(url: string, referer: string, opts: Options): Promi
             [replaceRefererHeader]: referer
         },
         onHeadersReceived: req => {
-            fileName = firstNonNull(getFileNameFromContentDisposition(req), getFileNameFromUrl(url));
+            fileName = [getFileNameFromContentDisposition(req), getFileNameFromUrl(url)].filter(Boolean)[0];
             if (!isTorrentFile(req, fileName)) {
                 console.log("Aborting XHR request as it's not a .torrent", url);
                 req.abort();
