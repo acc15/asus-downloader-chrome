@@ -65,7 +65,7 @@ export default (env: undefined, opts: WebpackOpts) => {
             new CopyWebpackPlugin([
                 {
                     from: 'src/manifest.json',
-                    transform: content => _.template(content)(pkg)
+                    transform: content => _.template(content.toString())(pkg)
                 },
                 { from: { glob: 'src/icon*.png' }, flatten: true }
             ]),
