@@ -46,6 +46,7 @@ export async function dmQueueTorrent(p: QueueTorrent): Promise<UploadStatus> {
         "ACK_SUCESS": UploadStatus.Success,
         "TOTAL_FULL": UploadStatus.TaskLimit,
         "BT_EXISTS": UploadStatus.Exists,
+        "BT_EXIST": UploadStatus.Exists,
         "BT_ACK_SUCESS=": UploadStatus.ConfirmFiles
     };
     return Object.keys(statusMap).filter(k => resp.responseText.indexOf(k) >= 0).map(k => statusMap[k])[0] || UploadStatus.Error;
