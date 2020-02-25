@@ -49,7 +49,9 @@ export async function dmQueueTorrent(p: QueueTorrent): Promise<UploadStatus> {
         "BT_EXIST": UploadStatus.Exists,
         "BT_ACK_SUCESS=": UploadStatus.ConfirmFiles
     };
-    return Object.keys(statusMap).filter(k => resp.responseText.indexOf(k) >= 0).map(k => statusMap[k])[0] || UploadStatus.Error;
+    const statusKeys = Object.keys(statusMap);
+    statusKeys.sort((a, b) => b.length - a.length);
+    return statusKeys.filter(k => resp.responseText.indexOf(k) >= 0).map(k => statusMap[k])[0] || UploadStatus.Error;
 }
 
 export async function dmConfirmAllFiles(p: QueueTorrent): Promise<boolean> {
