@@ -43,7 +43,7 @@ function addNotification(msg: string, optionsButtons: boolean = false) {
         title: "ASUS Download Master",
         iconUrl: "icon.png",
         message: msg,
-        buttons: optionsButtons ? [{ title: "Go to Options"}] : []
+        buttons: [{title: "Download Master"}].concat(optionsButtons ? [{ title: "Go to Options"}] : [])
     };
     chrome.notifications.create(opts);
 }
@@ -56,7 +56,27 @@ chrome.browserAction.onClicked.addListener(() => {
 
 chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
     console.log("Notification button clicked", id, btnIdx);
-    chrome.runtime.openOptionsPage();
+    switch (btnIdx) {
+        case 0:
+            loadOpts().then(opts => {
+                chrome.tabs.query({ url: opts.url + "/*" }, tabs => {
+                    if (tabs && tabs.length > 0) {
+                        chrome.tabs.highlight({ tabs: tabs[0].index });
+                    } else {
+                        chrome.tabs.create({ url: opts.url });
+                    }
+                });
+            });
+            break;
+
+        case 1:
+            chrome.runtime.openOptionsPage();
+            break;
+
+        default:
+            console.warn("Illegal btnIdx was clicked on notification", id, btnIdx);
+            break;
+    }
 });
 
 const downloadMenuItemId = `${extensionPrefix}.download`;

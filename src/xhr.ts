@@ -5,7 +5,7 @@ export const replaceRefererHeader = "X-Replace-Referer";
 interface XhrRequest {
     method: string;
     url: string;
-    headers?: { [k: string]: string | string[] };
+    headers?: { [k: string]: string | Array<string> };
     body?: string | FormData | Blob;
     responseType?: XMLHttpRequestResponseType;
     onHeadersReceived?: XhrCallback;
