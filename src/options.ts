@@ -11,6 +11,7 @@ function getElementChecked<T extends HTMLElement>(id: string): T {
 
 document.addEventListener("DOMContentLoaded", () => {
     const urlInput = getElementChecked<HTMLInputElement>("url");
+    const urlLink = getElementChecked<HTMLAnchorElement>("urlLink");
     const userInput = getElementChecked<HTMLInputElement>("user");
     const pwdInput = getElementChecked<HTMLInputElement>("pwd");
     const statusDiv = getElementChecked<HTMLDivElement>("status");
@@ -18,8 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadOpts().then(opts => {
         urlInput.value = opts.url;
+        urlLink.href = opts.url;
         userInput.value = opts.user;
         pwdInput.value = opts.pwd;
+    });
+
+    urlInput.addEventListener("input", function() {
+        urlLink.href = this.value;
     });
 
     form.addEventListener("submit", e => {

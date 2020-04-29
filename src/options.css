@@ -36,6 +36,14 @@ body {
     padding: 5px;
 }
 
+.option a {
+    float: left;
+    margin-left: 5px;
+    font-size: 18px;
+    position: relative;
+    top: -3px;
+}
+
 #status {
     margin-left: 200px;
     margin-bottom: 10px;
