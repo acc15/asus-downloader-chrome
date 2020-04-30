@@ -67,7 +67,7 @@ export default (env: undefined, opts: WebpackOpts) => {
                     from: 'src/manifest.json',
                     transform: content => _.template(content.toString())(pkg)
                 },
-                { from: { glob: 'src/icon*.png' }, flatten: true }
+                { from: { glob: 'src/icon*.+(png|svg)' }, flatten: true }
             ]),
             new HtmlWebpackPlugin({
                 filename: 'options.html',

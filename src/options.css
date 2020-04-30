@@ -14,6 +14,20 @@ body {
     font-size: 18px;
 }
 
+body:after {
+    content: "";
+    background-image: url("icon.svg");
+    background-repeat: no-repeat;
+    background-size: 400px;
+    opacity: 0.2;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: -80px;
+    top: -20px;
+    z-index: -1;
+}
+
 .option {
     margin-bottom: 10px;
     height: 36px;
@@ -51,6 +65,10 @@ body {
 }
 
 #submit {
+    margin-left: 200px;
+}
+
+#form {
     margin-left: 200px;
 }
 
