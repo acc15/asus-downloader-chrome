@@ -11,6 +11,7 @@ html {
 
 body {
     margin: 20px;
+    font-size: 18px;
 }
 
 .option {
@@ -39,7 +40,6 @@ body {
 .option a {
     float: left;
     margin-left: 5px;
-    font-size: 18px;
     position: relative;
     top: -3px;
 }
@@ -50,8 +50,11 @@ body {
     color: darkslateblue;
 }
 
-button[type=submit] {
-    width: 200px;
+#submit {
     margin-left: 200px;
+}
+
+button {
+    width: 200px;
     font-size: 18px;
 }

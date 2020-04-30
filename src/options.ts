@@ -1,3 +1,4 @@
+import {dmLogin} from "./DownloadMasterClient";
 import {loadOpts, Options, storeOpts} from "./option-tools";
 import "./options.css";
 
@@ -15,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const userInput = getElementChecked<HTMLInputElement>("user");
     const pwdInput = getElementChecked<HTMLInputElement>("pwd");
     const statusDiv = getElementChecked<HTMLDivElement>("status");
+    const checkButton = getElementChecked<HTMLButtonElement>("check");
     const form = getElementChecked<HTMLFormElement>("form");
 
     loadOpts().then(opts => {
@@ -26,6 +28,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     urlInput.addEventListener("input", function() {
         urlLink.href = this.value;
+    });
+
+    checkButton.addEventListener("click", () => {
+        dmLogin({ url: urlInput.value, user: userInput.value, pwd: pwdInput.value })
+            .then(result => statusDiv.innerText = result
+                ? "Provided URL and credentials are valid. Don't forget to Save options"
+                : "Invalid credentials provided");
     });
 
     form.addEventListener("submit", e => {
