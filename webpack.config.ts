@@ -1,3 +1,4 @@
+import {CleanWebpackPlugin} from "clean-webpack-plugin";
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import path from "path";
@@ -9,6 +10,10 @@ import _ from "lodash";
 
 function hash<T, V>(values: Array<T>, valueMap: (v: T) => V, keyMap: (v: T) => string = k => String(k)): { [k: string]: V } {
     return values.reduce<{ [k: string]: V }>((obj, v) => { obj[keyMap(v)] = valueMap(v); return obj; }, {});
+}
+
+function filterPlugins(p: Array<webpack.WebpackPluginInstance | boolean | null | undefined>): Array<webpack.WebpackPluginInstance> {
+    return p.filter(v => Boolean(v)).map(v => v as webpack.WebpackPluginInstance);
 }
 
 interface WebpackOpts {
@@ -62,7 +67,8 @@ export default (env: undefined, opts: WebpackOpts) => {
                 "path": require.resolve("path-browserify")
             }
         },
-        plugins: [
+        plugins: filterPlugins([
+            !isDev && new CleanWebpackPlugin(),
             new webpack.DefinePlugin({
                 extensionVersion: pkg.version
             }),
@@ -86,7 +92,7 @@ export default (env: undefined, opts: WebpackOpts) => {
                 template: 'src/options.html',
                 chunks: ['options']
             })
-        ].filter(Boolean),
+        ]),
         output: {
             filename: '[name].js',
             path: path.resolve(__dirname, `dist/${pkg.name}`)

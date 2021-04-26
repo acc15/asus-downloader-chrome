@@ -6,6 +6,7 @@
         "start": "webpack --mode=development --watch",
         "dev": "webpack --mode=development",
         "build": "webpack --mode=production",
+        "cbuild": "webpack --mode=production",
         "test": "mocha -r ts-node/register 'src/**/*.spec.ts'",
         "watch-test": "mocha -w --watch-extensions ts -r ts-node/register 'src/**/*.spec.ts'"
     },
@@ -37,6 +38,7 @@
         "@typescript-eslint/eslint-plugin": "^4.22.0",
         "@typescript-eslint/parser": "^4.22.0",
         "chai": "^4.3.4",
+        "clean-webpack-plugin": "*",
         "copy-webpack-plugin": "^8.1.1",
         "css-loader": "^5.2.4",
         "eslint": "^7.25.0",
