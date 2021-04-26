@@ -1,6 +1,6 @@
 {
     "name": "asus-downloader-chrome",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "ASUS Download Master Chrome Extension",
     "scripts": {
         "start": "webpack --mode=development --watch",
@@ -53,6 +53,8 @@
     },
     "dependencies": {
         "@types/content-disposition": "^0.5.3",
-        "content-disposition": "^0.5.3"
+        "buffer": "^6.0.3",
+        "content-disposition": "^0.5.3",
+        "path-browserify": "^1.0.1"
     }
 }

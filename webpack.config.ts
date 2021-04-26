@@ -45,12 +45,18 @@ export default (env: undefined, opts: WebpackOpts) => {
                 },
                 {
                     test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
-                    use: 'file-loader'
+                    loader: 'file-loader',
+                    options: {
+                        name: '[name].[ext]'
+                    }
                 }
             ]
         },
         resolve: {
-            extensions: ['.ts', '.js']
+            extensions: ['.ts', '.js'],
+            fallback: {
+                "path": require.resolve("path-browserify")
+            }
         },
         plugins: [
             new webpack.DefinePlugin({
@@ -69,7 +75,8 @@ export default (env: undefined, opts: WebpackOpts) => {
                         transform: content => _.template(content.toString())(pkg)
                     },
                     {
-                        from: 'src/icon*.png'
+                        from: 'src/icon*.png',
+                        to: '[name][ext]'
                     }
                 ]
             }),
