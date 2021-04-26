@@ -41,6 +41,7 @@
         "lodash": "^4.17.21",
         "mocha": "^8.3.2",
         "style-loader": "^2.0.0",
+        "svgo-loader": "^3.0.0",
         "ts-loader": "^9.1.1",
         "ts-node": "^9.1.1",
         "tslint": "^5.20.1",
