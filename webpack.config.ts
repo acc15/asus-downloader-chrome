@@ -62,13 +62,17 @@ export default (env: undefined, opts: WebpackOpts) => {
             isDev && new ChromeExtensionReloader({
                 entries: hash(entries, k => k),
             }),
-            new CopyWebpackPlugin([
-                {
-                    from: 'src/manifest.json',
-                    transform: content => _.template(content.toString())(pkg)
-                },
-                { from: { glob: 'src/icon*.png' }, flatten: true }
-            ]),
+            new CopyWebpackPlugin({
+                patterns: [
+                    {
+                        from: 'src/manifest.json',
+                        transform: content => _.template(content.toString())(pkg)
+                    },
+                    {
+                        from: 'src/icon*.png'
+                    }
+                ]
+            }),
             new HtmlWebpackPlugin({
                 filename: 'options.html',
                 template: 'src/options.html',

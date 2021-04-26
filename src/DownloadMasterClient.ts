@@ -27,10 +27,12 @@ export async function dmLogin(opts: Options): Promise<boolean> {
 }
 
 export const enum UploadStatus {
-    Success = "success",
-    ConfirmFiles = "confirm_files",
-    Exists = "exists",
+    Ok = "ok",
+    Exists = "already_exists",
+    LoginFail = "login_fail",
     TaskLimit = "task_limit",
+    DiskFull = "disk_full",
+    ConfirmFiles = "confirm_files",
     Error = "error"
 }
 
@@ -43,12 +45,14 @@ export async function dmQueueTorrent(p: QueueTorrent): Promise<UploadStatus> {
     }
 
     const statusMap: { [k: string]: UploadStatus } = {
-        "ACK_SUCESS": UploadStatus.Success,
+        "ACK_SUCESS": UploadStatus.Ok,
         "TOTAL_FULL": UploadStatus.TaskLimit,
         "BT_EXISTS": UploadStatus.Exists,
         "BT_EXIST": UploadStatus.Exists,
-        "BT_ACK_SUCESS=": UploadStatus.ConfirmFiles
+        "BT_ACK_SUCESS=": UploadStatus.ConfirmFiles,
+        "DISK_FULL": UploadStatus.DiskFull
     };
+
     const statusKeys = Object.keys(statusMap);
     statusKeys.sort((a, b) => b.length - a.length);
     return statusKeys.filter(k => resp.responseText.indexOf(k) >= 0).map(k => statusMap[k])[0] || UploadStatus.Error;

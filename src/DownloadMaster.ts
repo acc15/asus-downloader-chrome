@@ -3,14 +3,6 @@ import {Options} from "./option-tools";
 import {getFileNameFromContentDisposition, getFileNameFromUrl, isTorrentFile} from "./utils";
 import xhr, {replaceRefererHeader} from "./xhr";
 
-export const enum QueueStatus {
-    Ok = "ok",
-    Exists = "already_exists",
-    LoginFail = "login_fail",
-    TaskLimit = "task_limit",
-    UnknownError = "unknown_error"
-}
-
 export const enum FileType {
     Torrent = "torrent",
     Ed2k = "ed2k",
@@ -25,7 +17,7 @@ export interface QueueBase {
 }
 
 export interface QueueResult extends QueueBase {
-    status: QueueStatus;
+    status: UploadStatus;
     type?: FileType;
     fileName?: string;
 }
@@ -56,34 +48,12 @@ async function queueTorrent(p: QueueTorrent): Promise<QueueResult> {
         opts: p.opts,
         fileName: p.fileName,
         type: FileType.Torrent,
-        status: QueueStatus.Ok
+        status: uploadBtResp
     };
 
-    switch (uploadBtResp) {
-        case UploadStatus.Success:
-            result.status = QueueStatus.Ok;
-            break;
-
-        case UploadStatus.Exists:
-            result.status = QueueStatus.Exists;
-            break;
-
-        case UploadStatus.ConfirmFiles:
-            const confirmResp = await dmConfirmAllFiles(p);
-            if (!confirmResp) {
-                result.status = QueueStatus.UnknownError;
-                break;
-            }
-            result.status = QueueStatus.Ok;
-            break;
-
-        case UploadStatus.TaskLimit:
-            result.status = QueueStatus.TaskLimit;
-            break;
-
-        default:
-            result.status = QueueStatus.UnknownError;
-            break;
+    if (result.status === UploadStatus.ConfirmFiles) {
+        const confirmResp = await dmConfirmAllFiles(p);
+        result.status = confirmResp ? UploadStatus.Ok : UploadStatus.Error;
     }
     return result;
 }
@@ -97,16 +67,16 @@ async function queueFile(p: QueueFile): Promise<QueueResult> {
         opts: p.opts,
         fileName: p.fileName,
         type: p.type,
-        status: QueueStatus.Ok
+        status: UploadStatus.Ok
     };
-    result.status = resp ? QueueStatus.Ok : QueueStatus.UnknownError;
+    result.status = resp ? UploadStatus.Ok : UploadStatus.Error;
     return result;
 }
 
 async function queueDownload(url: string, referer: string, opts: Options): Promise<QueueResult> {
     const loginResp = await dmLogin(opts);
     if (!loginResp) {
-        return {url, opts, status: QueueStatus.LoginFail};
+        return {url, opts, status: UploadStatus.LoginFail};
     }
 
     const notATorrentMatch = Object.keys(notATorrentUrlPrefixes).filter(p => url.indexOf(p) === 0);

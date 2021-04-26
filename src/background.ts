@@ -1,4 +1,5 @@
-import queueDownload, {FileType, QueueResult, QueueStatus} from "./DownloadMaster";
+import queueDownload, {FileType, QueueResult} from "./DownloadMaster";
+import {UploadStatus} from "./DownloadMasterClient";
 import {loadOpts} from "./option-tools";
 import {initRequestFiltering} from "./xhr";
 
@@ -18,21 +19,25 @@ function getSuccessMessagePrefix(result: QueueResult) {
 
 function getMessageByQueueResult(result: QueueResult) {
     switch (result.status) {
-        case QueueStatus.Ok:
+        case UploadStatus.Ok:
             return getSuccessMessagePrefix(result) + " has been successfully added to download queue";
 
-        case QueueStatus.Exists:
+        case UploadStatus.Exists:
             return `Torrent file '${result.fileName}' already in download queue`;
 
-        case QueueStatus.LoginFail:
+        case UploadStatus.LoginFail:
             return "Login fail. Check extension options and specify valid Download Master URL, Login and Password";
 
-        case QueueStatus.TaskLimit:
+        case UploadStatus.TaskLimit:
             return "Download Master task limit reached (30 active tasks max). " +
                 "Wait until other tasks will finish or cancel them manually. " +
                 "This is limitation of ASUS Download Master. ";
 
-        case QueueStatus.UnknownError:
+        case UploadStatus.DiskFull:
+            return "Not enough space remaining on router drive. " +
+                "Please free disk space and retry download. ";
+
+        default:
             return "Unknown Error. Sorry :(";
     }
 }
@@ -93,7 +98,7 @@ chrome.contextMenus.onClicked.addListener(item => {
             .then(opts => queueDownload(url, item.pageUrl, opts))
             .then(result => {
                 console.log(`Queue of (${url}) has been finished`, result);
-                addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
+                addNotification(getMessageByQueueResult(result), result.status === UploadStatus.LoginFail);
             }, err => {
                 console.log("Queue error", err);
                 addNotification("Unexpected error occurred during adding URL to download queue");
