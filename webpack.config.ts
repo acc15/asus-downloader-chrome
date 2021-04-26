@@ -1,11 +1,8 @@
-/// <reference path="./reloader.d.ts"/>
-
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import path from "path";
 import webpack from 'webpack';
-import ChromeExtensionReloader from "webpack-chrome-extension-reloader";
-import TSLintPlugin from 'tslint-webpack-plugin';
+import ESLintPlugin from 'eslint-webpack-plugin';
 
 import pkg from './package.json';
 import _ from "lodash";
@@ -69,11 +66,8 @@ export default (env: undefined, opts: WebpackOpts) => {
             new webpack.DefinePlugin({
                 extensionVersion: pkg.version
             }),
-            new TSLintPlugin({
+            new ESLintPlugin({
                 files: ['./src/**/*.ts']
-            }),
-            isDev && new ChromeExtensionReloader({
-                entries: hash(entries, k => k),
             }),
             new CopyWebpackPlugin({
                 patterns: [

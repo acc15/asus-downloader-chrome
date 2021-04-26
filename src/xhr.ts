@@ -23,7 +23,7 @@ function xhr(req: XhrRequest): Promise<XMLHttpRequest> {
         q.onload = () => resolve(q);
         if (req.headers) {
             for (const k in req.headers) {
-                if (!req.headers.hasOwnProperty(k)) {
+                if (!Object.prototype.hasOwnProperty.call(req.headers, k)) {
                     continue;
                 }
                 const v = req.headers[k];
@@ -69,9 +69,9 @@ function xhr(req: XhrRequest): Promise<XMLHttpRequest> {
     });
 }
 
-let webRequestFilterRequests: number = 0;
+let webRequestFilterRequests = 0;
 
-export function initRequestFiltering() {
+export function initRequestFiltering(): void {
     chrome.webRequest.onBeforeSendHeaders.addListener(details => {
         if (webRequestFilterRequests <= 0) {
             return;
@@ -105,11 +105,11 @@ export function initRequestFiltering() {
     }, {types: ["xmlhttprequest"], urls: ["http://*/*", "https://*/*"]}, ["requestHeaders", "extraHeaders", "blocking"]);
 }
 
-function startRequestFiltering() {
+function startRequestFiltering(): void {
     ++webRequestFilterRequests;
 }
 
-function stopRequestFiltering() {
+function stopRequestFiltering(): void {
     --webRequestFilterRequests;
 }
 

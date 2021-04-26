@@ -1,6 +1,7 @@
 import {dmLogin} from "./DownloadMasterClient";
 import {loadOpts, Options, storeOpts} from "./option-tools";
 import "./options.css";
+import {unexpectedErrorHandler} from "./utils";
 
 function getElementChecked<T extends HTMLElement>(id: string): T {
     const el = document.getElementById(id);
@@ -24,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         urlLink.href = opts.url;
         userInput.value = opts.user;
         pwdInput.value = opts.pwd;
-    });
+    }, unexpectedErrorHandler);
 
     urlInput.addEventListener("input", function() {
         urlLink.href = this.value;
@@ -34,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
         dmLogin({ url: urlInput.value, user: userInput.value, pwd: pwdInput.value })
             .then(result => statusDiv.innerText = result
                 ? "Provided URL and credentials are valid. Don't forget to Save options"
-                : "Invalid credentials provided");
+                : "Invalid credentials provided", unexpectedErrorHandler);
     });
 
     form.addEventListener("submit", e => {
@@ -47,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         console.log("Saving options...", options);
-        storeOpts(options).then(() => statusDiv.innerText = "Settings has been successfully saved");
+        storeOpts(options).then(() => statusDiv.innerText = "Settings has been successfully saved", unexpectedErrorHandler);
 
     });
 });

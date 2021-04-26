@@ -1,39 +1,34 @@
-import queueDownload, {FileType, QueueResult} from "./DownloadMaster";
-import {UploadStatus} from "./DownloadMasterClient";
+import queueDownload, {getFileTypeName, QueueResult} from "./DownloadMaster";
+import {QueueStatus} from "./DownloadMasterClient";
 import {loadOpts} from "./option-tools";
+import {unexpectedErrorHandler} from "./utils";
 import {initRequestFiltering} from "./xhr";
 
 const extensionPrefix = "asus-download-master";
 
 console.log("ASUS Download Master Chrome Extension started...");
 
-function getSuccessMessagePrefix(result: QueueResult) {
-    switch (result.type) {
-        case FileType.Plain: return `File ${result.fileName}`;
-        case FileType.Ed2k: return `ED2K file (${result.url})`;
-        case FileType.Magnet: return `Magnet URL (${result.url})`;
-        case FileType.Ftp: return `FTP file (${result.url})`;
-        case FileType.Torrent: return `Torrent file '${result.fileName}'`;
-    }
+function getFilePrefix(result: QueueResult) {
+    return `${getFileTypeName(result.type)} '${result.name}'`;
 }
 
 function getMessageByQueueResult(result: QueueResult) {
     switch (result.status) {
-        case UploadStatus.Ok:
-            return getSuccessMessagePrefix(result) + " has been successfully added to download queue";
+        case QueueStatus.Ok:
+            return getFilePrefix(result) + " has been successfully added to download queue";
 
-        case UploadStatus.Exists:
-            return `Torrent file '${result.fileName}' already in download queue`;
+        case QueueStatus.Exists:
+            return getFilePrefix(result) + " already in download queue";
 
-        case UploadStatus.LoginFail:
+        case QueueStatus.LoginFail:
             return "Login fail. Check extension options and specify valid Download Master URL, Login and Password";
 
-        case UploadStatus.TaskLimit:
+        case QueueStatus.TaskLimit:
             return "Download Master task limit reached (30 active tasks max). " +
                 "Wait until other tasks will finish or cancel them manually. " +
                 "This is limitation of ASUS Download Master. ";
 
-        case UploadStatus.DiskFull:
+        case QueueStatus.DiskFull:
             return "Not enough space remaining on router drive. " +
                 "Please free disk space and retry download. ";
 
@@ -42,7 +37,7 @@ function getMessageByQueueResult(result: QueueResult) {
     }
 }
 
-function addNotification(msg: string, optionsButtons: boolean = false) {
+function addNotification(msg: string, optionsButtons = false) {
     const opts: chrome.notifications.NotificationOptions = {
         type: "basic",
         title: "ASUS Download Master",
@@ -71,7 +66,7 @@ chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
                         chrome.tabs.create({ url: opts.url });
                     }
                 });
-            });
+            }, unexpectedErrorHandler);
             break;
 
         case 1:
@@ -98,7 +93,7 @@ chrome.contextMenus.onClicked.addListener(item => {
             .then(opts => queueDownload(url, item.pageUrl, opts))
             .then(result => {
                 console.log(`Queue of (${url}) has been finished`, result);
-                addNotification(getMessageByQueueResult(result), result.status === UploadStatus.LoginFail);
+                addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
             }, err => {
                 console.log("Queue error", err);
                 addNotification("Unexpected error occurred during adding URL to download queue");
