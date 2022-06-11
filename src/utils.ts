@@ -1,78 +1,48 @@
-import contentDisposition, {ContentDisposition} from "content-disposition";
+import contentDisposition from "content-disposition";
 
-export type GenericMap<T> = { [k:string]: T };
-export type StringMap = GenericMap<string>;
-export type StrNumMap = GenericMap<string | number>;
-export type QueryMap = GenericMap<Array<string | undefined>>;
-
-const MAGNET_URL_PREFIX = "magnet:";
-
-export function toUrlEncodedPair(key: string, value: string | number): string {
-    return encodeURIComponent(key) + "=" + encodeURIComponent(String(value));
+export interface Options {
+    url: string;
+    user: string;
+    pwd: string;
 }
 
-export function toUrlEncodedFormData(obj: StrNumMap): string {
-    return Object.keys(obj).map(k => toUrlEncodedPair(k, obj[k])).join("&");
-}
+const defaultOptions: Options = {
+    url: "http://router.asus.com:8081",
+    user: "admin",
+    pwd: "admin"
+};
 
-export function isSuccessfulStatus(status: number): boolean {
-    return status >= 200 && status < 300;
-}
+const magnetUrlPrefix = "magnet:";
+const probablyTorrentContentTypes = [
+    "application/x-bittorrent",
+    "application/octet-stream",
+    "application/octet_stream",
+    "application/force-download"
+];
 
-export function unexpectedErrorHandler(err: unknown): void {
-    console.log(`Unexpected error occurred: ${String(err)}`);
-}
-
-export function getFileNameFromContentDispositionHeader(header: string | null): string | undefined {
+export const isSuccessfulStatus = (status: number) => status >= 200 && status < 300;
+export const unexpectedErrorHandler = (err: unknown) => console.log(`Unexpected error occurred: ${String(err)}`)
+export const getFileNameFromCD = (header: string | null) => {
     if (!header) {
-        return undefined;
+        return null;
     }
-
-    const cd: ContentDisposition = contentDisposition.parse(header);
-    const p = cd.parameters as StringMap;
-    return p && p.filename || undefined;
-}
-
-export function getFileNameFromContentDisposition(req: XMLHttpRequest): string | undefined {
-    return getFileNameFromContentDispositionHeader(req.getResponseHeader("Content-Disposition"));
-}
-
-export function decodeQueryComponent(comp: string): string {
-    return decodeURIComponent(comp.replace(/\+/g, ' '));
-}
-
-export function parseQueryString(str: string): QueryMap {
-    const result: QueryMap = {};
-
-    str = str.substring(str.indexOf("?") + 1);
-    for (const pair of str.split("&")) {
-
-        const eqIndex = pair.indexOf("=");
-        const name = decodeQueryComponent(eqIndex >= 0 ? pair.substring(0, eqIndex) : pair);
-        const value = eqIndex >= 0 ? decodeQueryComponent(pair.substring(eqIndex + 1)) : undefined;
-
-        let array = result[name];
-        if (!array) {
-            result[name] = array = [];
-        }
-
-        array.push(value);
+    const file = contentDisposition.parse(header).parameters.filename;
+    if (!file) {
+        return null;
     }
-    return result;
+    return decodeURIComponent(file);
 }
-
-export function getMagnetFileNameOrUrl(url: string): string {
-    const qs = parseQueryString(url.substring(MAGNET_URL_PREFIX.length + 1));
-    const dn = qs['dn'];
-    return dn && dn.filter(Boolean)[0] || url;
+export const parseQueryString = (url: string) => {
+    const idx = url.indexOf("?");
+    return idx < 0 ? new URLSearchParams() : new URLSearchParams(url.substring(idx + 1));
 }
-
-export function getFileNameOrUrl(url: string): string {
+export const getMagnetFileNameOrUrl = (url: string) => parseQueryString(url).get("dn") || url;
+export const getFileNameOrUrl = (url: string) => {
     if (url.length === 0) {
         return url;
     }
 
-    if (url.startsWith(MAGNET_URL_PREFIX)) {
+    if (url.startsWith(magnetUrlPrefix)) {
         return getMagnetFileNameOrUrl(url);
     }
 
@@ -85,20 +55,32 @@ export function getFileNameOrUrl(url: string): string {
     return decodeURIComponent(p);
 }
 
-export function isTorrentFile(req: XMLHttpRequest, fileName: string): boolean {
-    const probablyTorrentContentTypes = [
-        "application/x-bittorrent",
-        "application/octet-stream",
-        "application/octet_stream",
-        "application/force-download"
-    ];
+export const isTorrentFile = (contentType: string | null, fileName: string) => Boolean(
+    contentType && probablyTorrentContentTypes.some(c => contentType.indexOf(c) >= 0) && fileName.endsWith(".torrent")
+);
 
-    const contentType = req.getResponseHeader("Content-Type");
-    if (!contentType) {
-        return false;
+export const normalizeUrl = (url: string) => {
+    let i = url.length;
+    while (i > 0) {
+        if (url[i - 1] !== "/") {
+            break;
+        }
+        --i;
     }
-    if (!probablyTorrentContentTypes.some(c => contentType.indexOf(c) >= 0)) {
-        return false;
+    return url.substring(0, i);
+}
+
+export const loadOpts = async () => {
+    try {
+        const opts = await chrome.storage.local.get(defaultOptions) as Options;
+        return ({...opts, url: normalizeUrl(opts.url)} as Options);
+    } catch (error) {
+        console.error("Unable to load options. Using defaults", error);
+        return defaultOptions;
     }
-    return fileName ? fileName.endsWith(".torrent") : false;
+}
+
+export const storeOpts = async (opts: Options) => {
+    await chrome.storage.local.set(opts);
+    return opts;
 }

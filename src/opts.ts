@@ -1,7 +1,7 @@
-import {dmLogin} from "./DownloadMasterClient";
-import {loadOpts, Options, storeOpts} from "./option-tools";
-import "./options.css";
-import {unexpectedErrorHandler} from "./utils";
+import "./opts.css"
+
+import {dmLogin} from "./dm-client";
+import {unexpectedErrorHandler, loadOpts, Options, storeOpts} from "./utils";
 
 function getElementChecked<T extends HTMLElement>(id: string): T {
     const el = document.getElementById(id);

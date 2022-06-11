@@ -1,18 +1,14 @@
-import queueDownload, {getFileTypeName, QueueResult} from "./DownloadMaster";
-import {QueueStatus} from "./DownloadMasterClient";
-import {loadOpts} from "./option-tools";
-import {unexpectedErrorHandler} from "./utils";
-import {initRequestFiltering} from "./xhr";
+import queueDownload, {getFileTypeName, QueueResult} from "./dm";
+import {QueueStatus} from "./dm-client";
+import {unexpectedErrorHandler, loadOpts} from "./utils";
 
 const extensionPrefix = "asus-download-master";
+const downloadMenuItemId = `${extensionPrefix}.download`;
 
 console.log("ASUS Download Master Chrome Extension started...");
 
-function getFilePrefix(result: QueueResult) {
-    return `${getFileTypeName(result.type)} '${result.name}'`;
-}
-
-function getMessageByQueueResult(result: QueueResult) {
+const getFilePrefix = (result: QueueResult) => `${getFileTypeName(result.type)} '${result.name}'`;
+const getMessageByQueueResult = (result: QueueResult) => {
     switch (result.status) {
         case QueueStatus.Ok:
             return getFilePrefix(result) + " has been successfully added to download queue";
@@ -37,22 +33,15 @@ function getMessageByQueueResult(result: QueueResult) {
     }
 }
 
-function addNotification(msg: string, optionsButtons = false) {
-    const opts: chrome.notifications.NotificationOptions = {
-        type: "basic",
-        title: "ASUS Download Master",
-        iconUrl: "icon.png",
-        message: msg,
-        buttons: [{title: "Download Master"}].concat(optionsButtons ? [{ title: "Go to Options"}] : [])
-    };
-    chrome.notifications.create(opts);
-}
-
-initRequestFiltering();
-
-chrome.browserAction.onClicked.addListener(() => {
-    chrome.runtime.openOptionsPage();
+const addNotification = (msg: string, optionsButtons = false) => chrome.notifications.create({
+    type: "basic",
+    title: "ASUS Download Master",
+    iconUrl: "icon.png",
+    message: msg,
+    buttons: [{title: "Download Master"}].concat(optionsButtons ? [{ title: "Go to Options"}] : [])
 });
+
+chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
 chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
     console.log("Notification button clicked", id, btnIdx);
@@ -61,9 +50,9 @@ chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
             loadOpts().then(opts => {
                 chrome.tabs.query({ url: opts.url + "/*" }, tabs => {
                     if (tabs && tabs.length > 0) {
-                        chrome.tabs.highlight({ tabs: tabs[0].index });
+                        chrome.tabs.highlight({ tabs: tabs[0].index }).catch(unexpectedErrorHandler);
                     } else {
-                        chrome.tabs.create({ url: opts.url });
+                        chrome.tabs.create({ url: opts.url }).catch(unexpectedErrorHandler);
                     }
                 });
             }, unexpectedErrorHandler);
@@ -79,24 +68,27 @@ chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
     }
 });
 
-const downloadMenuItemId = `${extensionPrefix}.download`;
 chrome.contextMenus.create({
     id: downloadMenuItemId,
     title: "Download with ASUS Download Master",
     contexts: ["link"],
 });
 
-chrome.contextMenus.onClicked.addListener(item => {
-    const url = item.linkUrl;
-    if (item.menuItemId === downloadMenuItemId && url) {
-        loadOpts()
-            .then(opts => queueDownload(url, item.pageUrl, opts))
-            .then(result => {
-                console.log(`Queue of (${url}) has been finished`, result);
-                addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
-            }, err => {
-                console.log("Queue error", err);
-                addNotification("Unexpected error occurred during adding URL to download queue");
-            });
+const handleContextClick = async (url: string) => {
+    const opts = await loadOpts();
+    try {
+        const result = await queueDownload(url, opts)
+        console.log(`Queue of (${url}) has been finished`, result);
+        addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
+    } catch (err) {
+        console.log("Queue error", err);
+        addNotification("Unexpected error occurred during adding URL to download queue");
     }
+}
+
+chrome.contextMenus.onClicked.addListener((item) => {
+    if (item.menuItemId !== downloadMenuItemId || !item.linkUrl) {
+        return;
+    }
+    void handleContextClick(item.linkUrl);
 });

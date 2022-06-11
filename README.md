@@ -30,10 +30,6 @@ You will see notification about success or error.
 
 Tested on RT-AC88U and Download Master ver. 3.1.0.104
 
-## There is already 3 similar extensions
-
-I know. They all not working now.
-
 ## Sources
 
 It's opensource, so you can make sure you are safe :)

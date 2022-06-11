@@ -1,23 +1,22 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "${description}",
     "description": "Simplifies adding torrent, ed2k, ftp files to ASUS Download Master queue",
     "version": "${version}",
     "permissions": [
         "storage",
         "contextMenus",
-        "notifications",
-        "webRequest",
-        "webRequestBlocking",
-        "http://*/",
-        "https://*/"
+        "notifications"
+    ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
     ],
     "background": {
-        "scripts": ["background.js"],
-        "persistent": true
+        "service_worker": "background.js"
     },
-    "options_page": "options.html",
-    "browser_action": {},
+    "action": {},
+    "options_page": "opts.html",
     "icons": {
         "64": "icon.png"
     }

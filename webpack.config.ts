@@ -25,7 +25,7 @@ export default (env: undefined, opts: WebpackOpts) => {
     console.log(`Build mode: ${opts.mode}`);
 
     const isDev = opts.mode === "development";
-    const entries: Array<string> = ['background', 'options'];
+    const entries: Array<string> = ['background', 'opts'];
 
     const config: webpack.Configuration = {
         entry: hash(entries, k => `./src/${k}.ts`),
@@ -47,17 +47,8 @@ export default (env: undefined, opts: WebpackOpts) => {
                 },
                 {
                     test: /\.svg$/,
-                    use: [
-                        {
-                            loader: 'file-loader',
-                            options: {
-                                name: '[name].[ext]'
-                            }
-                        },
-                        {
-                            loader: 'svgo-loader'
-                        }
-                    ]
+                    type: 'asset',
+                    use: 'svgo-loader'
                 }
             ]
         },
@@ -88,9 +79,9 @@ export default (env: undefined, opts: WebpackOpts) => {
                 ]
             }),
             new HtmlWebpackPlugin({
-                filename: 'options.html',
-                template: 'src/options.html',
-                chunks: ['options']
+                filename: 'opts.html',
+                template: 'src/opts.html',
+                chunks: ['opts']
             })
         ]),
         output: {
