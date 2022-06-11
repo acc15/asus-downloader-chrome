@@ -2,7 +2,7 @@
 
 ## Terms and Definition
 
-* DM (Download Master) - ASUS Download Master USB application (see https://www.asus.com/en/support/FAQ/1016385/)
+* DM (Download Master) - ASUS Download Master USB application (see https://www.asus.com/en/support/FAQ/114001/)
 
 ## Information We Collect and Use
 
