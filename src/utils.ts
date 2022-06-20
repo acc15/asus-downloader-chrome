@@ -80,7 +80,4 @@ export const loadOpts = async () => {
     }
 }
 
-export const storeOpts = async (opts: Options) => {
-    await chrome.storage.local.set(opts);
-    return opts;
-}
+export const storeOpts = (opts: Options) => chrome.storage.local.set(opts);

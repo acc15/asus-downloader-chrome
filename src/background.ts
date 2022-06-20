@@ -41,7 +41,33 @@ const addNotification = (msg: string, optionsButtons = false) => chrome.notifica
     buttons: [{title: "Download Master"}].concat(optionsButtons ? [{ title: "Go to Options"}] : [])
 });
 
+chrome.runtime.onInstalled.addListener(() => {
+    console.log("onInstalled called");
+    chrome.contextMenus.create({
+        id: downloadMenuItemId,
+        title: "Download with ASUS Download Master",
+        contexts: ["link"],
+    })
+});
+
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
+
+chrome.contextMenus.onClicked.addListener((item) => {
+    if (item.menuItemId !== downloadMenuItemId || !item.linkUrl) {
+        return;
+    }
+    void (async (url: string) => {
+        const opts = await loadOpts();
+        try {
+            const result = await queueDownload(url, opts)
+            console.log(`Queue of (${url}) has been finished`, result);
+            addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
+        } catch (err) {
+            console.log("Queue error", err);
+            addNotification("Unexpected error occurred during adding URL to download queue");
+        }
+    })(item.linkUrl);
+});
 
 chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
     console.log("Notification button clicked", id, btnIdx);
@@ -68,27 +94,3 @@ chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
     }
 });
 
-chrome.contextMenus.create({
-    id: downloadMenuItemId,
-    title: "Download with ASUS Download Master",
-    contexts: ["link"],
-});
-
-const handleContextClick = async (url: string) => {
-    const opts = await loadOpts();
-    try {
-        const result = await queueDownload(url, opts)
-        console.log(`Queue of (${url}) has been finished`, result);
-        addNotification(getMessageByQueueResult(result), result.status === QueueStatus.LoginFail);
-    } catch (err) {
-        console.log("Queue error", err);
-        addNotification("Unexpected error occurred during adding URL to download queue");
-    }
-}
-
-chrome.contextMenus.onClicked.addListener((item) => {
-    if (item.menuItemId !== downloadMenuItemId || !item.linkUrl) {
-        return;
-    }
-    void handleContextClick(item.linkUrl);
-});
