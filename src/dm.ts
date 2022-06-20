@@ -1,4 +1,4 @@
-import {dmConfirmAllFiles, dmLogin, dmQueueLink, dmQueueTorrent, QueueStatus} from "./dm-client";
+import {dmConfirmAllFiles, dmQueueLink, dmQueueTorrent, QueueStatus} from "./dm-client";
 import {Options, getFileNameFromCD, getFileNameOrUrl, isSuccessfulStatus, isTorrentFile} from "./utils";
 
 export const enum FileType {
@@ -43,27 +43,20 @@ const notATorrentUrlPrefixes: { [k: string]: FileType } = {
 };
 
 async function queueTorrent(p: QueueTorrent): Promise<QueueResult> {
-    console.log(`Queueing .torrent from ${p.url}...`);
     const uploadBtStatus = await dmQueueTorrent(p);
     if (uploadBtStatus === QueueStatus.ConfirmFiles) {
-        const confirmResp = await dmConfirmAllFiles(p);
-        return { ...p, status: confirmResp ? QueueStatus.Ok : QueueStatus.Error };
+        const confirmStatus = await dmConfirmAllFiles(p);
+        return { ...p, status: confirmStatus };
     }
     return { ...p, status: uploadBtStatus };
 }
 
 async function queueFile(p: QueueFile): Promise<QueueResult> {
-    console.log(`Queueing file from ${p.url}...`);
-    const status = await dmQueueLink(p.url, p.opts);
+    const status = await dmQueueLink(p);
     return { ...p, status };
 }
 
 async function queueDownload(url: string, opts: Options): Promise<QueueResult> {
-    const loginResp = await dmLogin(opts);
-    if (!loginResp) {
-        return {url, opts, status: QueueStatus.LoginFail, type: FileType.Unknown, name: url};
-    }
-
     const notATorrentMatch = Object.keys(notATorrentUrlPrefixes).filter(p => url.indexOf(p) === 0);
     if (notATorrentMatch.length > 0) {
         const prefixKey = notATorrentMatch[0];
