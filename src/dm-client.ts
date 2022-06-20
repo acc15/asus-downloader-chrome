@@ -23,7 +23,7 @@ const statusMap: { [k: string]: QueueStatus } = {
 const statusKeys = Object.keys(statusMap);
 statusKeys.sort((a, b) => b.length - a.length);
 
-const isLoginFailed = (status: number): boolean => status == 401 || status == 598;
+const isLoginFailed = (status: number): boolean => status === 401 || status === 598;
 
 async function responseToStatus(resp: Response, checkResponseText: boolean): Promise<QueueStatus> {
     if (!isSuccessfulStatus(resp.status)) {
