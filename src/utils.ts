@@ -1,18 +1,5 @@
 import contentDisposition from "content-disposition";
 
-export interface Options {
-    url: string;
-    user: string;
-    pwd: string;
-}
-
-const defaultOptions: Options = {
-    url: "http://router.asus.com:8081",
-    user: "admin",
-    pwd: "admin"
-};
-
-const magnetUrlPrefix = "magnet:";
 const probablyTorrentContentTypes = [
     "application/x-bittorrent",
     "application/octet-stream",
@@ -20,9 +7,11 @@ const probablyTorrentContentTypes = [
     "application/force-download"
 ];
 
-export const isSuccessfulStatus = (status: number) => status >= 200 && status < 300;
-export const unexpectedErrorHandler = (err: unknown) => console.log(`Unexpected error occurred: ${String(err)}`)
-export const getFileNameFromCD = (header: string | null) => {
+export function isSuccessfulStatus(status: number) {
+    return status >= 200 && status < 300;
+}
+
+export function getFileNameFromCD(header: string | null): string | null {
     if (!header) {
         return null;
     }
@@ -32,34 +21,29 @@ export const getFileNameFromCD = (header: string | null) => {
     }
     return decodeURIComponent(file);
 }
-export const parseQueryString = (url: string) => {
+
+export function parseQueryString(url: string) {
     const idx = url.indexOf("?");
     return idx < 0 ? new URLSearchParams() : new URLSearchParams(url.substring(idx + 1));
 }
-export const getMagnetFileNameOrUrl = (url: string) => parseQueryString(url).get("dn") || url;
-export const getFileNameOrUrl = (url: string) => {
-    if (url.length === 0) {
-        return url;
-    }
 
-    if (url.startsWith(magnetUrlPrefix)) {
-        return getMagnetFileNameOrUrl(url);
-    }
-
-    let p = new URL(url).pathname;
-
-    const lastSlash = p.lastIndexOf("/");
-    if (lastSlash >= 0) {
-        p = p.substring(lastSlash + 1);
-    }
-    return decodeURIComponent(p);
+export function isTorrentFile(contentType: string | null, fileName: string): boolean {
+    return Boolean(
+        contentType &&
+        probablyTorrentContentTypes.some(c => contentType.indexOf(c) >= 0) &&
+        fileName.endsWith(".torrent")
+    );
 }
 
-export const isTorrentFile = (contentType: string | null, fileName: string) => Boolean(
-    contentType && probablyTorrentContentTypes.some(c => contentType.indexOf(c) >= 0) && fileName.endsWith(".torrent")
-);
+export function getContentLength(resp: Response): number | null {
+    const text = resp.headers.get("Content-Length");
+    if (!text) {
+        return null;
+    }
+    return parseInt(text);
+}
 
-export const normalizeUrl = (url: string) => {
+export function normalizeUrl(url: string) {
     let i = url.length;
     while (i > 0) {
         if (url[i - 1] !== "/") {
@@ -70,14 +54,3 @@ export const normalizeUrl = (url: string) => {
     return url.substring(0, i);
 }
 
-export const loadOpts = async () => {
-    try {
-        const opts = await chrome.storage.local.get(defaultOptions) as Options;
-        return ({...opts, url: normalizeUrl(opts.url)} as Options);
-    } catch (error) {
-        console.error("Unable to load options. Using defaults", error);
-        return defaultOptions;
-    }
-}
-
-export const storeOpts = (opts: Options) => chrome.storage.local.set(opts);

@@ -16,7 +16,7 @@ body {
 
 body:after {
     content: "";
-    background-image: url("icon.svg");
+    background-image: url("./assets/icon.svg");
     background-repeat: no-repeat;
     background-size: 400px;
     opacity: 0.2;

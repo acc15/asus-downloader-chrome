@@ -1,85 +1,121 @@
-import {dmConfirmAllFiles, dmQueueLink, dmQueueTorrent, QueueStatus} from "./dm-client";
-import {Options, getFileNameFromCD, getFileNameOrUrl, isSuccessfulStatus, isTorrentFile} from "./utils";
+import {Options} from "./options";
+import Queue from "./queue";
+import {isSuccessfulStatus} from "./utils";
 
-export const enum FileType {
-    Torrent = "torrent",
-    Ed2k = "ed2k",
-    Magnet = "magnet",
-    Ftp = "ftp",
-    Plain = "plain",
-    Unknown = "unknown"
+export const enum QueueStatus {
+    InProcess,
+    TorrentDownload,
+    ConfirmFiles,
+    Ok,
+    Error,
+    Exists,
+    LoginFail,
+    TaskLimit,
+    DiskFull
 }
 
-export function getFileTypeName(type: FileType): string {
-    switch (type) {
-        case FileType.Ed2k: return "ED2K file";
-        case FileType.Magnet: return "Magnet URL";
-        case FileType.Ftp: return "FTP file";
-        case FileType.Torrent: return "Torrent file";
-        case FileType.Plain: return "File";
-        default: return "Unknown file";
-    }
-}
-
-export interface QueueFile {
-    url: string;
-    opts: Options;
-    type: FileType;
-    name: string;
-}
-
-export interface QueueResult extends QueueFile {
-    status: QueueStatus;
-}
-
-export interface QueueTorrent extends QueueFile {
-    blob: Blob;
-}
-
-const notATorrentUrlPrefixes: { [k: string]: FileType } = {
-    "ftp:": FileType.Ftp,
-    "ed2k:": FileType.Ed2k,
-    "magnet:": FileType.Magnet
+const statusMap: { [k: string]: QueueStatus } = {
+    "BT_ACK_SUCESS=": QueueStatus.ConfirmFiles,
+    "ACK_SUCESS": QueueStatus.Ok,
+    "TOTAL_FULL": QueueStatus.TaskLimit,
+    "BT_EXISTS": QueueStatus.Exists,
+    "BT_EXIST": QueueStatus.Exists,
+    "DISK_FULL": QueueStatus.DiskFull
 };
 
-async function queueTorrent(p: QueueTorrent): Promise<QueueResult> {
-    const uploadBtStatus = await dmQueueTorrent(p);
-    if (uploadBtStatus === QueueStatus.ConfirmFiles) {
-        const confirmStatus = await dmConfirmAllFiles(p);
-        return { ...p, status: confirmStatus };
-    }
-    return { ...p, status: uploadBtStatus };
+function isLoginFailed(status: number) {
+    return status === 401 || status === 598;
 }
 
-async function queueFile(p: QueueFile): Promise<QueueResult> {
-    const status = await dmQueueLink(p);
-    return { ...p, status };
+export function responseTextToStatus(responseText: string): QueueStatus {
+    for (const text in statusMap) {
+        if (responseText.indexOf(text) >= 0) {
+            return statusMap[text];
+        }
+    }
+    return QueueStatus.Error;
 }
 
-async function queueDownload(url: string, opts: Options): Promise<QueueResult> {
-    const notATorrentMatch = Object.keys(notATorrentUrlPrefixes).filter(p => url.indexOf(p) === 0);
-    if (notATorrentMatch.length > 0) {
-        const prefixKey = notATorrentMatch[0];
-        return queueFile({url, opts, type: notATorrentUrlPrefixes[prefixKey], name: getFileNameOrUrl(url)});
-    }
-
-    console.log(`Checking URL file type. Sending GET request to ${url}`);
-
-    const resp = await fetch(url);
+async function responseToStatus(resp: Response, checkResponseText: boolean): Promise<QueueStatus> {
     if (!isSuccessfulStatus(resp.status)) {
-        return {url, opts, status: QueueStatus.Error, type: FileType.Unknown, name: url};
+        return isLoginFailed(resp.status) ? QueueStatus.LoginFail : QueueStatus.Error;
     }
 
-    const contentType = resp.headers.get("Content-Type");
-    const contentDisposition = resp.headers.get("Content-Disposition");
-
-    const name = getFileNameFromCD(contentDisposition) || getFileNameOrUrl(url);
-    if (!isTorrentFile(contentType, name)) {
-        return queueFile({url, name, opts, type: FileType.Plain});
+    if (!checkResponseText) {
+        return QueueStatus.Ok;
     }
 
-    const blob = await resp.blob();
-    return queueTorrent({url, name, opts, type: FileType.Torrent, blob});
+    const text = await resp.text();
+    return responseTextToStatus(text);
 }
 
-export default queueDownload;
+export async function dmLogin(opts: Options): Promise<boolean> {
+    const fd = new URLSearchParams({
+        "flag": "",
+        "login_username": btoa(opts.user),
+        "login_passwd": btoa(opts.pwd),
+        "directurl": "/downloadmaster/task.asp"
+    });
+
+    console.log("Login form-data", fd);
+    const resp = await fetch(opts.url + "/check.asp", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: fd
+    });
+
+    return isSuccessfulStatus(resp.status);
+}
+
+async function dmCall(l: Queue, checkResponseText: boolean, httpCall: () => Promise<Response>): Promise<QueueStatus> {
+    const resp = await httpCall();
+    if (!isLoginFailed(resp.status)) {
+        return responseToStatus(resp, checkResponseText);
+    }
+
+    const loginResult = await dmLogin(l.opts);
+    if (!loginResult) {
+        return QueueStatus.LoginFail;
+    }
+
+    const secondResp = await httpCall();
+    return responseToStatus(secondResp, checkResponseText);
+}
+
+export async function dmQueueTorrent(l: Queue): Promise<QueueStatus> {
+    console.log(`Queueing .torrent from ${l.url}...`);
+
+    const fd = new FormData();
+    fd.append("file", l.torrent, l.name);
+
+    return dmCall(l, true, () => fetch(l.opts.url + "/downloadmaster/dm_uploadbt.cgi", { method: "POST", body: fd}));
+}
+
+export async function dmConfirmAllFiles(l: Queue): Promise<QueueStatus> {
+    console.log(`Confirming all .torrent files from ${l.url}...`);
+
+    const params = new URLSearchParams({
+        filename: l.name,
+        download_type: "All",
+        D_type: "3",
+        t: "0.36825365996235604"
+    }).toString();
+
+    return dmCall(l, false, () => fetch(l.opts.url + "/downloadmaster/dm_uploadbt.cgi?" + params));
+}
+
+export async function dmQueueUrl(l: Queue): Promise<QueueStatus> {
+    console.log(`Queueing file from ${l.url}...`);
+
+    const params = new URLSearchParams({
+        action_mode: "DM_ADD",
+        download_type: "5",
+        again: "no",
+        usb_dm_url: l.url,
+        t: "0.7478890386712465"
+    }).toString();
+
+    return dmCall(l, true, () => fetch(l.opts.url + "/downloadmaster/dm_apply.cgi?" + params));
+}

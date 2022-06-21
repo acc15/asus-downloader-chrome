@@ -43,7 +43,7 @@ export default (env: undefined, opts: WebpackOpts) => {
                 },
                 {
                     test: /\.(png|jpg)$/,
-                    use: 'url-loader',
+                    type: 'asset/resource'
                 },
                 {
                     test: /\.svg$/,
@@ -71,10 +71,6 @@ export default (env: undefined, opts: WebpackOpts) => {
                     {
                         from: 'src/manifest.json',
                         transform: content => _.template(content.toString())(pkg)
-                    },
-                    {
-                        from: 'src/icon*.png',
-                        to: '[name][ext]'
                     }
                 ]
             }),
@@ -86,6 +82,7 @@ export default (env: undefined, opts: WebpackOpts) => {
         ]),
         output: {
             filename: '[name].js',
+            assetModuleFilename: 'assets/[base]',
             path: path.resolve(__dirname, `dist/${pkg.name}`)
         },
         optimization: {

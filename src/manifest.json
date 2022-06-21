@@ -18,6 +18,6 @@
     "action": {},
     "options_page": "opts.html",
     "icons": {
-        "64": "icon.png"
+        "64": "assets/icon.png"
     }
 }
