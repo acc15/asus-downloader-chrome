@@ -1,18 +1,29 @@
-import {normalizeUrl} from "./utils";
-
 export interface Options {
     url: string;
     user: string;
     pwd: string;
+    notificationTimeout: number;
 }
 
 const defaultOptions: Options = {
     url: "http://router.asus.com:8081",
     user: "admin",
-    pwd: "admin"
+    pwd: "admin",
+    notificationTimeout: 5000
 };
 
-export async function loadOpts() {
+export function normalizeUrl(url: string) {
+    let i = url.length;
+    while (i > 0) {
+        if (url[i - 1] !== "/") {
+            break;
+        }
+        --i;
+    }
+    return url.substring(0, i);
+}
+
+export async function loadOpts(): Promise<Options> {
     try {
         const opts = await chrome.storage.local.get(defaultOptions) as Options;
         return ({...opts, url: normalizeUrl(opts.url)} as Options);

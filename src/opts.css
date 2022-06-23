@@ -1,17 +1,22 @@
-
-.icon {
-    display: inline-block;
-    vertical-align: middle;
-}
-
 html {
     margin: 0;
-    font-size: 18px;
 }
 
 body {
-    margin: 20px;
+    margin: 0 auto;
+    min-width: 700px;
+    width: 90%;
     font-size: 18px;
+}
+
+@media (min-width: 1200px) {
+    body {
+        margin: 0 0 0 200px;
+        width: auto;
+    }
+    #form {
+        width: 800px;
+    }
 }
 
 body:after {
@@ -28,51 +33,37 @@ body:after {
     z-index: -1;
 }
 
-.option {
+.row {
+    display: grid;
+    align-items: center;
     margin-bottom: 10px;
-    height: 36px;
-    line-height: 36px;
+    column-gap: 5px;
 }
 
-.clearfix {
-    clear: both;
+.row-3 {
+    grid-template-columns: 220px 4fr 1fr;
 }
 
-.option label {
-    width: 200px;
-    float: left;
+.row-2 {
+    grid-template-columns: 220px auto;
 }
-.option input {
-    width: 600px;
-    float: left;
+
+.second-col {
+    grid-column: 2;
+}
+
+#status {
+    color: darkslateblue;
+}
+
+input {
     font-size: 18px;
     border-radius: 5px;
     border: 1px solid black;
     padding: 5px;
 }
 
-.option a {
-    float: left;
-    margin-left: 5px;
-    position: relative;
-    top: -3px;
-}
-
-#status {
-    margin-left: 200px;
-    margin-bottom: 10px;
-    color: darkslateblue;
-}
-
-#submit {
-    margin-left: 200px;
-}
-
-#form {
-    margin-left: 200px;
-}
-
 button {
-    width: 200px;
     font-size: 18px;
+    width: 200px;
 }

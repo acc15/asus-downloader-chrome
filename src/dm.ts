@@ -1,121 +1,124 @@
 import {Options} from "./options";
-import Queue from "./queue";
-import {isSuccessfulStatus} from "./utils";
+import UrlDescriptor from "./url-descriptor";
+import {Status} from "./status";
+import {HttpHeader, isSuccessfulStatus} from "./util";
 
-export const enum QueueStatus {
-    InProcess,
-    TorrentDownload,
-    ConfirmFiles,
-    Ok,
-    Error,
-    Exists,
-    LoginFail,
-    TaskLimit,
-    DiskFull
-}
-
-const statusMap: { [k: string]: QueueStatus } = {
-    "BT_ACK_SUCESS=": QueueStatus.ConfirmFiles,
-    "ACK_SUCESS": QueueStatus.Ok,
-    "TOTAL_FULL": QueueStatus.TaskLimit,
-    "BT_EXISTS": QueueStatus.Exists,
-    "BT_EXIST": QueueStatus.Exists,
-    "DISK_FULL": QueueStatus.DiskFull
+const statusMap: { [k: string]: Status } = {
+    "BT_ACK_SUCESS=": Status.ConfirmFiles,
+    "ACK_SUCESS": Status.Ok,
+    "TOTAL_FULL": Status.TaskLimit,
+    "BT_EXISTS": Status.Exists,
+    "BT_EXIST": Status.Exists,
+    "DISK_FULL": Status.DiskFull
 };
 
 function isLoginFailed(status: number) {
     return status === 401 || status === 598;
 }
 
-export function responseTextToStatus(responseText: string): QueueStatus {
+export function responseTextToStatus(responseText: string): Status {
     for (const text in statusMap) {
         if (responseText.indexOf(text) >= 0) {
             return statusMap[text];
         }
     }
-    return QueueStatus.Error;
+    return Status.Error;
 }
 
-async function responseToStatus(resp: Response, checkResponseText: boolean): Promise<QueueStatus> {
+async function responseToStatus(resp: Response): Promise<Status> {
     if (!isSuccessfulStatus(resp.status)) {
-        return isLoginFailed(resp.status) ? QueueStatus.LoginFail : QueueStatus.Error;
+        return isLoginFailed(resp.status) ? Status.LoginFail : Status.Error;
     }
-
-    if (!checkResponseText) {
-        return QueueStatus.Ok;
-    }
-
     const text = await resp.text();
     return responseTextToStatus(text);
 }
 
-export async function dmLogin(opts: Options): Promise<boolean> {
-    const fd = new URLSearchParams({
-        "flag": "",
-        "login_username": btoa(opts.user),
-        "login_passwd": btoa(opts.pwd),
-        "directurl": "/downloadmaster/task.asp"
-    });
+export type DownloadMasterListener = (status: Status) => Promise<void>;
 
-    console.log("Login form-data", fd);
-    const resp = await fetch(opts.url + "/check.asp", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: fd
-    });
+export default class DownloadMaster {
 
-    return isSuccessfulStatus(resp.status);
-}
+    opts: Options;
+    listener?: DownloadMasterListener;
 
-async function dmCall(l: Queue, checkResponseText: boolean, httpCall: () => Promise<Response>): Promise<QueueStatus> {
-    const resp = await httpCall();
-    if (!isLoginFailed(resp.status)) {
-        return responseToStatus(resp, checkResponseText);
+    constructor(opts:Options, listener?: DownloadMasterListener) {
+        this.opts = opts;
+        this.listener = listener;
     }
 
-    const loginResult = await dmLogin(l.opts);
-    if (!loginResult) {
-        return QueueStatus.LoginFail;
+    public async login(): Promise<boolean> {
+        const fd = new URLSearchParams({
+            "flag": "",
+            "login_username": btoa(this.opts.user),
+            "login_passwd": btoa(this.opts.pwd),
+            "directurl": "/downloadmaster/task.asp"
+        });
+
+        console.log("Login form-data", fd);
+        const resp = await fetch(this.opts.url + "/check.asp", {
+            method: "POST",
+            headers: {
+                [HttpHeader.ContentType]: "application/x-www-form-urlencoded"
+            },
+            body: fd
+        });
+        return isSuccessfulStatus(resp.status);
     }
 
-    const secondResp = await httpCall();
-    return responseToStatus(secondResp, checkResponseText);
-}
+    private async call(httpCall: () => Promise<Response>): Promise<Status> {
+        let resp = await httpCall();
+        if (isLoginFailed(resp.status)) {
+            const loginResult = await this.login();
+            if (loginResult) {
+                resp = await httpCall();
+            }
+        }
 
-export async function dmQueueTorrent(l: Queue): Promise<QueueStatus> {
-    console.log(`Queueing .torrent from ${l.url}...`);
+        const status = await responseToStatus(resp);
+        if (this.listener) {
+            await this.listener(status);
+        }
+        return status;
+    }
 
-    const fd = new FormData();
-    fd.append("file", l.torrent, l.name);
+    async queueUrl(url: UrlDescriptor) {
+        console.log(`Queueing file from ${url.link}...`);
 
-    return dmCall(l, true, () => fetch(l.opts.url + "/downloadmaster/dm_uploadbt.cgi", { method: "POST", body: fd}));
-}
+        const params = new URLSearchParams({
+            action_mode: "DM_ADD",
+            download_type: "5",
+            again: "no",
+            usb_dm_url: url.link,
+            t: "0.7478890386712465"
+        }).toString();
 
-export async function dmConfirmAllFiles(l: Queue): Promise<QueueStatus> {
-    console.log(`Confirming all .torrent files from ${l.url}...`);
+        return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_apply.cgi?" + params));
+    }
 
-    const params = new URLSearchParams({
-        filename: l.name,
-        download_type: "All",
-        D_type: "3",
-        t: "0.36825365996235604"
-    }).toString();
+    async queueTorrent(url: UrlDescriptor, torrent: Blob): Promise<Status> {
+        console.log(`Queueing .torrent from ${url.link}...`);
 
-    return dmCall(l, false, () => fetch(l.opts.url + "/downloadmaster/dm_uploadbt.cgi?" + params));
-}
+        const fd = new FormData();
+        fd.append("file", torrent, url.name);
 
-export async function dmQueueUrl(l: Queue): Promise<QueueStatus> {
-    console.log(`Queueing file from ${l.url}...`);
+        return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi", { method: "POST", body: fd}));
+    }
 
-    const params = new URLSearchParams({
-        action_mode: "DM_ADD",
-        download_type: "5",
-        again: "no",
-        usb_dm_url: l.url,
-        t: "0.7478890386712465"
-    }).toString();
+    async confirmFiles(url: UrlDescriptor): Promise<Status> {
+        console.log(`Confirming all .torrent files from ${url.link}...`);
 
-    return dmCall(l, true, () => fetch(l.opts.url + "/downloadmaster/dm_apply.cgi?" + params));
+        const params = new URLSearchParams({
+            filename: url.name,
+            download_type: "All",
+            D_type: "3",
+            t: "0.36825365996235604"
+        }).toString();
+
+        return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi?" + params));
+    }
+
+    async queueTorrentAndConfirm(url: UrlDescriptor, torrent: Blob): Promise<Status> {
+        const status = await this.queueTorrent(url, torrent);
+        return status === Status.ConfirmFiles ? this.confirmFiles(url) : status;
+    }
+
 }

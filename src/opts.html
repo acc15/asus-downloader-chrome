@@ -5,28 +5,41 @@
     <title>ASUS Download Master Chrome Extension options</title>
 </head>
 <body>
+    <h1>ASUS Download Master Chrome Extension options</h1>
     <form id="form">
-        <h1>ASUS Download Master Chrome Extension options</h1>
-        <div class="option">
+        <div class="row row-3">
             <label for="url">Application URL</label>
-            <input id="url" placeholder="Application URL" type="text">
+            <input id="url"
+                   type="text"
+                   placeholder="Application URL"
+                   title="URL to ASUS Download Master application"
+            >
             <a id="urlLink" target="_blank">Go to URL</a>
-            <div class="clearfix"></div>
         </div>
-        <div class="option">
+        <div class="row row-2">
             <label for="user">Username</label>
             <input id="user" placeholder="User" type="text">
-            <div class="clearfix"></div>
         </div>
-        <div class="option">
+        <div class="row row-2">
             <label for="pwd">Password</label>
             <input id="pwd" placeholder="Password" type="password">
-            <div class="clearfix"></div>
         </div>
-        <div id="status"></div>
-        <div id="submit">
-            <button type="submit">Save</button>
-            <button id="check" type="button">Check options</button>
+        <div class="row row-2">
+            <label for="notification-timeout">Notification timeout (ms)</label>
+            <input id="notification-timeout"
+                   type="number"
+                   placeholder="Notification timeout (0 or empty means no timeout)"
+                   title="Specifies amount of time (in milliseconds) to automatically dismiss notification. '0' or empty value - indicates that a notification should remain active until the user clicks or dismisses it, rather than closing automatically"
+            >
+        </div>
+        <div class="row row-2">
+            <div id="status" class="second-col"></div>
+        </div>
+        <div class="row row-2">
+            <div class="second-col">
+                <button type="submit">Save</button>
+                <button id="check" type="button">Check options</button>
+            </div>
         </div>
     </form>
 </body>

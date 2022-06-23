@@ -4,6 +4,7 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 import path from "path";
 import webpack from 'webpack';
 import ESLintPlugin from 'eslint-webpack-plugin';
+import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
 
 import pkg from './package.json';
 import _ from "lodash";
@@ -20,11 +21,12 @@ interface WebpackOpts {
     mode: string;
 }
 
-export default (env: undefined, opts: WebpackOpts) => {
+export default (env: any, opts: WebpackOpts) => {
     console.log(`Extension Version: ${pkg.version}`);
     console.log(`Build mode: ${opts.mode}`);
 
     const isDev = opts.mode === "development";
+    const analyze = Boolean(env.analyze);
     const entries: Array<string> = ['background', 'opts'];
 
     const config: webpack.Configuration = {
@@ -53,10 +55,7 @@ export default (env: undefined, opts: WebpackOpts) => {
             ]
         },
         resolve: {
-            extensions: ['.ts', '.js'],
-            fallback: {
-                "path": require.resolve("path-browserify")
-            }
+            extensions: ['.ts', '.js']
         },
         plugins: filterPlugins([
             !isDev && new CleanWebpackPlugin(),
@@ -78,15 +77,13 @@ export default (env: undefined, opts: WebpackOpts) => {
                 filename: 'opts.html',
                 template: 'src/opts.html',
                 chunks: ['opts']
-            })
+            }),
+            analyze && new BundleAnalyzerPlugin()
         ]),
         output: {
             filename: '[name].js',
             assetModuleFilename: 'assets/[base]',
-            path: path.resolve(__dirname, `dist/${pkg.name}`)
-        },
-        optimization: {
-            minimize: false
+            path: path.resolve(__dirname, "dist")
         }
     };
 

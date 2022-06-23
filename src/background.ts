@@ -1,27 +1,10 @@
-import {QueueStatus} from "./dm";
 import {loadOpts} from "./options";
-import Queue from "./queue";
+import queue from "./queue";
 
 const extensionPrefix = "asus-download-master";
 const downloadMenuItemId = `${extensionPrefix}.download`;
 
 console.log("ASUS Download Master Chrome Extension started...");
-
-async function download(url: string) {
-    const opts = await loadOpts();
-    const urlLoader = new Queue(url, opts);
-    try {
-        await urlLoader.init();
-    } catch (e) {
-        console.error("Unable to initialize UrlLoader", e);
-    }
-    try {
-        await urlLoader.queue();
-    } catch (e) {
-        console.error("Error occurred during URL queue", e);
-        await urlLoader.update(QueueStatus.Error);
-    }
-}
 
 async function openDownloadMaster() {
     const opts = await loadOpts();
@@ -48,7 +31,7 @@ chrome.contextMenus.onClicked.addListener((item) => {
     if (item.menuItemId !== downloadMenuItemId || !item.linkUrl) {
         return;
     }
-    void download(item.linkUrl);
+    void queue(item.linkUrl);
 });
 
 chrome.notifications.onButtonClicked.addListener((id, btnIdx) => {
