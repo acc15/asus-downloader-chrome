@@ -104,7 +104,7 @@ export function decodePercent(iter: CharIterator, quoted: boolean, encoding: str
     try {
         t = new TextDecoder(encoding);
     } catch (e) {
-        console.warn(e);
+        console.debug(e);
     }
 
     let result = "";
@@ -191,7 +191,7 @@ export interface ContentDisposition {
 
 export function parseContentDisposition(s: string): ContentDisposition {
     const iter = new CharIterator(s);
-    const type = eatToken(iter, ";");
+    const type = eatToken(iter, ";").toLowerCase();
 
     const params: ContentDispositionParams = {};
     while (iter.hasNext()) {

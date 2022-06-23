@@ -1,5 +1,3 @@
-import "mocha";
-
 import {expect} from "chai";
 import {
     CharIterator,
@@ -86,6 +84,29 @@ describe("content-disposition", () => {
                 params: {
                     "": { encoding: "enc", language: "en", extValue: "ext" }
                 }
+            },
+            "attachment; filename=\"filename with ; semicolon.txt\"": {
+                type: "attachment",
+                params: {
+                    filename: { value: "filename with ; semicolon.txt" }
+                }
+            },
+            "atTaChMeNT  ; caseInsens=\"value\" ; cAsEInSenS* = utf-8''extValue": {
+                type: "attachment",
+                params: {
+                    caseinsens: { value: "value", extValue: "extValue", encoding: "utf-8", language: "" }
+                }
+            },
+            "inline; filename=\"%E3%81%82%E3%81%AE%E3%81%A8%E3%81%8D%E3%82%AD%E3%82%B9%E3%81%97%E3%81%A6%E3%81%8A%E3%81%91%E3%81%AF%E3%82%99%20%E3%82%AA%E3%83%AA%E3%82%B7%E3%82%99%E3%83%8A%E3%83%AB%E3%83%BB%E3%82%B5%E3%82%A6%E3%83%B3%E3%83%88%E3%82%99%E3%83%88%E3%83%A9%E3%83%83%E3%82%AF.torrent\"; filename*=UTF-8''%E3%81%82%E3%81%AE%E3%81%A8%E3%81%8D%E3%82%AD%E3%82%B9%E3%81%97%E3%81%A6%E3%81%8A%E3%81%91%E3%81%AF%E3%82%99%20%E3%82%AA%E3%83%AA%E3%82%B7%E3%82%99%E3%83%8A%E3%83%AB%E3%83%BB%E3%82%B5%E3%82%A6%E3%83%B3%E3%83%88%E3%82%99%E3%83%88%E3%83%A9%E3%83%83%E3%82%AF.torrent": {
+                type: "inline",
+                params: {
+                    filename: {
+                        value: 'あのときキスしておけば オリジナル・サウンドトラック.torrent',
+                        extValue: 'あのときキスしておけば オリジナル・サウンドトラック.torrent',
+                        encoding: "UTF-8",
+                        language: ""
+                    }
+                }
             }
         };
 
@@ -99,16 +120,16 @@ describe("content-disposition", () => {
 
     describe("getFileNameFromContentDisposition", () => {
 
-        const expectations: {[k: string]: string | null } = {
+        const examples: {[k: string]: string | null } = {
             "attachment; filename=\"[sq]withquotes.torrent\"": "[sq]withquotes.torrent",
             "attachment; filename*=UTF-8''weird%20%23%20%80%20%3D%20%7B%20%7D%20%3B%20filename.txt": "weird # � = { } ; filename.txt",
             "attachment; filename=\"Alpine%20Raspberry%20Pi%203.16.0%20aarch64%20TAR%20GZ.torrent\"": "Alpine Raspberry Pi 3.16.0 aarch64 TAR GZ.torrent",
             "attachment": null,
         }
 
-        for (const k in expectations) {
+        for (const k in examples) {
             it("must parse: " + k, () => {
-                expect(getFileNameFromContentDisposition(k)).eq(expectations[k]);
+                expect(getFileNameFromContentDisposition(k)).eq(examples[k]);
             });
         }
 
