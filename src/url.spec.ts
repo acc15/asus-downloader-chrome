@@ -1,5 +1,4 @@
 import {expect} from "chai";
-import {normalizeUrl} from "./options";
 import {getProtoByUrl, isMagnetUrl, Proto} from "./url";
 import {testMagnetLink} from "./util.spec";
 
@@ -20,7 +19,4 @@ describe("url", () => {
             expect(getProtoByUrl("https://abc")).eq(Proto.Unknown);
         });
     });
-
-
-
 });
