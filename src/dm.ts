@@ -150,7 +150,7 @@ export default class DownloadMaster {
         console.log(`Queueing .torrent from ${url.link}...`);
 
         const fd = new FormData();
-        fd.append("file", torrent, "a.torrent");
+        fd.append("file", torrent, url.name);
 
         return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi", { method: "POST", body: fd}));
     }
