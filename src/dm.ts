@@ -12,6 +12,22 @@ const statusMap: { [k: string]: Status } = {
     "DISK_FULL": Status.DiskFull
 };
 
+export interface ConfirmFiles {
+    name: string,
+    files: Array<ConfirmFile>
+}
+
+export interface ConfirmFile {
+    name: string,
+    size: string,
+    index: number
+}
+
+export interface DmResult {
+    status: Status,
+    confirm?: ConfirmFiles
+}
+
 function isLoginFailed(status: number) {
     return status === 401 || status === 598;
 }
@@ -25,12 +41,21 @@ export function responseTextToStatus(responseText: string): Status {
     return Status.Error;
 }
 
-async function responseToStatus(resp: Response): Promise<Status> {
+export function parseConfirmFiles(text: string): ConfirmFiles {
+    // TODO implement
+    return { name: "", files: [] };
+}
+
+async function responseToResult(resp: Response): Promise<DmResult> {
     if (!isSuccessfulStatus(resp.status)) {
-        return isLoginFailed(resp.status) ? Status.LoginFail : Status.Error;
+        return { status: isLoginFailed(resp.status) ? Status.LoginFail : Status.Error };
     }
     const text = await resp.text();
-    return responseTextToStatus(text);
+    const status = responseTextToStatus(text);
+    return {
+        status,
+        confirm: status === Status.ConfirmFiles ? parseConfirmFiles(text) : undefined
+    };
 }
 
 export type DownloadMasterListener = (status: Status) => Promise<void>;
@@ -64,7 +89,7 @@ export default class DownloadMaster {
         return isSuccessfulStatus(resp.status);
     }
 
-    private async call(httpCall: () => Promise<Response>): Promise<Status> {
+    private async call<T>(httpCall: () => Promise<Response>): Promise<DmResult> {
         let resp = await httpCall();
         if (isLoginFailed(resp.status)) {
             const loginResult = await this.login();
@@ -73,11 +98,11 @@ export default class DownloadMaster {
             }
         }
 
-        const status = await responseToStatus(resp);
+        const result = await responseToResult(resp);
         if (this.listener) {
-            await this.listener(status);
+            await this.listener(result.status);
         }
-        return status;
+        return result;
     }
 
     async queueUrl(url: UrlDescriptor) {
@@ -91,34 +116,34 @@ export default class DownloadMaster {
             t: "0.7478890386712465"
         }).toString();
 
-        return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_apply.cgi?" + params));
+        return (await this.call(() => fetch(this.opts.url + "/downloadmaster/dm_apply.cgi?" + params))).status;
     }
 
-    async queueTorrent(url: UrlDescriptor, torrent: Blob): Promise<Status> {
+    async queueTorrent(url: UrlDescriptor, torrent: Blob): Promise<DmResult> {
         console.log(`Queueing .torrent from ${url.link}...`);
 
         const fd = new FormData();
-        fd.append("file", torrent, url.name);
+        fd.append("file", torrent, "a.torrent");
 
         return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi", { method: "POST", body: fd}));
     }
 
-    async confirmFiles(url: UrlDescriptor): Promise<Status> {
-        console.log(`Confirming all .torrent files from ${url.link}...`);
+    async confirmFiles(name: string): Promise<Status> {
+        console.log(`Confirming all .torrent files from ${name}...`);
 
         const params = new URLSearchParams({
-            filename: url.name,
+            filename: name,
             download_type: "All",
             D_type: "3",
             t: "0.36825365996235604"
         }).toString();
 
-        return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi?" + params));
+        return (await this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi?" + params))).status;
     }
 
     async queueTorrentAndConfirm(url: UrlDescriptor, torrent: Blob): Promise<Status> {
-        const status = await this.queueTorrent(url, torrent);
-        return status === Status.ConfirmFiles ? this.confirmFiles(url) : status;
+        const result = await this.queueTorrent(url, torrent);
+        return result.status === Status.ConfirmFiles ? this.confirmFiles(result.confirm?.name as string) : result.status;
     }
 
 }

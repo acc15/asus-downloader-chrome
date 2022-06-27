@@ -27,6 +27,8 @@ describe("content-disposition", () => {
         expect(eatToken(new CharIterator("  UTF-8'en'test"), "'")).eq("UTF-8");
     });
 
+    'attachment; filename=[LimeTorrents.lol][WORLD.PG.ANIME].æ¯\x8Dã\x81\x8Cã\x83\x80ã\x83¼ã\x82¯ã\x82¨ã\x83«ã\x83\x95ã\x81«ã\x81ªã\x81£ã\x81¦ç\x95°ä¸\x96ç\x95\x8Cã\x81\x8Bã\x82\x89æ\x88»ã\x81£ã\x81¦ã\x81\x8Dã\x81\x9Fã\x80\x82.ï½\x9Eã\x82¨ã\x83­ã\x82¨ã\x83­ã\x81§ã\x81\x8Dã\x81¡ã\x82\x83ã\x81\x86.torrent'
+
     describe("parseContentDisposition", () => {
 
         const examples: {[k:string]: ContentDisposition} = {
