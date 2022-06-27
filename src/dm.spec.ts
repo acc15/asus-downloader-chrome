@@ -47,7 +47,7 @@ describe("dm", () => {
                     { index: 2, size: "14MB", name: "03 - Revenant.mp3" },
                     { index: 3, size: "22MB", name: "04 - Feast After Dark.mp3" },
                     { index: 4, size: "14MB", name: "05 - Absence Of Peace.mp3" },
-                    { index: 5, size:" 0MB", name: "Folder.jpg" },
+                    { index: 5, size: "0MB", name: "Folder.jpg" },
                 ]
             }
         };

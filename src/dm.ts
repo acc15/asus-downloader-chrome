@@ -17,6 +17,8 @@ export interface ConfirmFiles {
     files: Array<ConfirmFile>
 }
 
+const EMPTY_CONFIRM: ConfirmFiles = { name: "", files: [] };
+
 export interface ConfirmFile {
     name: string,
     size: string,
@@ -41,9 +43,34 @@ export function responseTextToStatus(responseText: string): Status {
     return Status.Error;
 }
 
+export function parseConfirmFile(text: string, index: number): ConfirmFile {
+    const parts = text.split("#");
+    return {
+        index: parts[0] && parseInt(parts[0]) || index,
+        size: parts[2] || "",
+        name: parts[3] || ""
+    };
+}
+
 export function parseConfirmFiles(text: string): ConfirmFiles {
-    // TODO implement
-    return { name: "", files: [] };
+    const ackPrefix = Object.keys(statusMap).filter(k => statusMap[k] === Status.ConfirmFiles)[0];
+    if (!ackPrefix) {
+        return EMPTY_CONFIRM;
+    }
+
+    const listStart = text.indexOf(ackPrefix);
+    const listEnd = text.indexOf("\");</script>");
+    if (listStart < 0 || listEnd < 0) {
+        return EMPTY_CONFIRM;
+    }
+
+    const list = text.substring(listStart + ackPrefix.length, listEnd);
+    const entries = list.split(", #");
+    if (entries.length < 2) {
+        return EMPTY_CONFIRM;
+    }
+
+    return { name: entries[1], files: entries.slice(2).map(parseConfirmFile) };
 }
 
 async function responseToResult(resp: Response): Promise<DmResult> {
@@ -89,7 +116,7 @@ export default class DownloadMaster {
         return isSuccessfulStatus(resp.status);
     }
 
-    private async call<T>(httpCall: () => Promise<Response>): Promise<DmResult> {
+    private async call(httpCall: () => Promise<Response>): Promise<DmResult> {
         let resp = await httpCall();
         if (isLoginFailed(resp.status)) {
             const loginResult = await this.login();
@@ -128,11 +155,11 @@ export default class DownloadMaster {
         return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi", { method: "POST", body: fd}));
     }
 
-    async confirmFiles(name: string): Promise<Status> {
-        console.log(`Confirming all .torrent files from ${name}...`);
+    async confirmAll(filename: string): Promise<Status> {
+        console.log(`Confirming all .torrent files from ${filename}...`);
 
         const params = new URLSearchParams({
-            filename: name,
+            filename: filename,
             download_type: "All",
             D_type: "3",
             t: "0.36825365996235604"
@@ -143,7 +170,7 @@ export default class DownloadMaster {
 
     async queueTorrentAndConfirm(url: UrlDescriptor, torrent: Blob): Promise<Status> {
         const result = await this.queueTorrent(url, torrent);
-        return result.status === Status.ConfirmFiles ? this.confirmFiles(result.confirm?.name as string) : result.status;
+        return result.status === Status.ConfirmFiles ? this.confirmAll(result.confirm?.name as string) : result.status;
     }
 
 }
