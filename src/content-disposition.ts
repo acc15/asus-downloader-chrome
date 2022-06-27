@@ -91,6 +91,16 @@ export class CharIterator {
         return this.value.substring(start, this.position);
     }
 
+    nextCode(): number {
+        const code = this.value.charCodeAt(this.position);
+        ++this.position;
+        return code;
+    }
+
+    code(): number {
+        return this.value.charCodeAt(this.position - 1);
+    }
+
     sub(start: number, end: number) {
         return new CharIterator(this.value, start, end);
     }
@@ -99,80 +109,113 @@ export class CharIterator {
 
 const defaultEncoding = "utf-8";
 
-export function decodePercent(iter: CharIterator, quoted: boolean, encoding: string = defaultEncoding): string {
-    let t: TextDecoder | null = null;
-    try {
-        t = new TextDecoder(encoding);
-    } catch (e) {
-        console.debug(e);
+export class TokenParser {
+
+    td: TextDecoder;
+    pd: TextDecoder;
+
+    constructor(td: TextDecoder, pd: TextDecoder) {
+        this.td = td;
+        this.pd = pd;
     }
 
-    let result = "";
-    let chunk = [];
-    while (iter.hasNext()) {
-        const ch = iter.next();
-        if (t && ch !== '%' && chunk.length > 0) {
-            result += t.decode(new Uint8Array(chunk));
-            chunk = [];
+    withPercentEncoding(e: string | undefined): TokenParser {
+        if (!e || e.toLowerCase() === this.pd.encoding.toLowerCase()) {
+            return this;
         }
-        if (quoted && ch === '\\') {
-            result += iter.next();
-            continue;
+        try {
+            return new TokenParser(this.td, new TextDecoder(e));
+        } catch (e) {
+            console.log("Unable to create TextDecoder", e);
+            return this;
         }
-        if (t && ch === '%') {
-            chunk.push(parseInt(iter.next(2), 16));
-            continue;
-        }
-        result += ch;
     }
-    if (chunk.length > 0 && t) {
-        result += t.decode(new Uint8Array(chunk));
-    }
-    return result;
-}
 
-export function decodeToken(iter: CharIterator, encoding: string = defaultEncoding): string {
-    let result = "";
-    let inQuote = false;
-    let chunkStart = iter.position;
-    while (iter.hasNext()) {
-        const ch = iter.next();
-        if (inQuote && ch === '\\') {
-            iter.skip();
-            continue;
-        }
-        if (ch === '"') {
-            result += decodePercent(iter.sub(chunkStart, iter.position - 1), inQuote, encoding);
-            chunkStart = iter.position;
-            inQuote = !inQuote;
-        }
+    decodeChunk(percent: boolean, chunk: Array<number>): string {
+        const d = percent ? this.pd : this.td;
+        const decodedChunk = d.decode(new Uint8Array(chunk));
+        return decodedChunk;
     }
-    if (iter.position > chunkStart) {
-        result += decodePercent(iter.sub(chunkStart, iter.position), inQuote, encoding);
-    }
-    return result;
-}
 
-export function eatToken(iter: CharIterator, stop: string, encoding: string = defaultEncoding): string {
-    let inQuote = false;
+    decode(iter: CharIterator, quoted: boolean): string {
+        let result = "";
 
-    const start = iter.position;
-    while (iter.hasNext()) {
-        const ch = iter.next();
-        if (inQuote) {
-            if (ch === '\\') {
-                iter.skip();
-            } else if (ch === '"') {
-                inQuote = false;
+        let percent = false;
+        let chunk = [];
+        while (iter.hasNext()) {
+            const ch = iter.next();
+            if (percent != (ch == '%')) {
+                if (chunk.length > 0) {
+                    result += this.decodeChunk(percent, chunk);
+                }
+                percent = !percent;
+                chunk = [];
             }
-        } else if (ch === stop) {
-            break;
-        } else if (ch === '"') {
-            inQuote = true;
+            if (quoted && ch === '\\') {
+                chunk.push(iter.nextCode());
+                continue;
+            }
+            if (ch === '%') {
+                chunk.push(parseInt(iter.next(2), 16));
+            } else {
+                chunk.push(iter.code());
+            }
         }
+        if (chunk.length > 0) {
+            result += this.decodeChunk(percent, chunk);
+        }
+        return result;
     }
 
-    return decodeToken(new CharIterator(iter.value.substring(start, iter.position - (iter.hasNext() ? 1 : 0)).trim()), encoding);
+    parse(iter: CharIterator): string {
+        let result = "";
+        let inQuote = false;
+        let chunkStart = iter.position;
+        while (iter.hasNext()) {
+            const ch = iter.next();
+            if (inQuote && ch === '\\') {
+                iter.skip();
+                continue;
+            }
+            if (ch === '"') {
+                result += this.decode(iter.sub(chunkStart, iter.position - 1), inQuote);
+                chunkStart = iter.position;
+                inQuote = !inQuote;
+            }
+        }
+        if (iter.position > chunkStart) {
+            result += this.decode(iter.sub(chunkStart, iter.position), inQuote);
+        }
+        return result;
+    }
+
+    eat(iter: CharIterator, stop: string): string {
+        let inQuote = false;
+
+        const start = iter.position;
+        while (iter.hasNext()) {
+            const ch = iter.next();
+            if (inQuote) {
+                if (ch === '\\') {
+                    iter.skip();
+                } else if (ch === '"') {
+                    inQuote = false;
+                }
+            } else if (ch === stop) {
+                break;
+            } else if (ch === '"') {
+                inQuote = true;
+            }
+        }
+
+        return this.parse(new CharIterator(iter.value.substring(start, iter.position - (iter.hasNext() ? 1 : 0)).trim()));
+    }
+
+    static createDefault(): TokenParser {
+        const d = new TextDecoder(defaultEncoding);
+        return new TokenParser(d, d);
+    }
+
 }
 
 export interface ContentDispositionValue {
@@ -191,12 +234,14 @@ export interface ContentDisposition {
 
 export function parseContentDisposition(s: string): ContentDisposition {
     const iter = new CharIterator(s);
-    const type = eatToken(iter, ";").toLowerCase();
+
+    const p = TokenParser.createDefault();
+    const type = p.eat(iter, ";").toLowerCase();
 
     const params: ContentDispositionParams = {};
     while (iter.hasNext()) {
 
-        let name = eatToken(iter, "=");
+        let name = p.eat(iter, "=");
         if (name.length === 0 && !iter.hasNext()) {
             break;
         }
@@ -213,11 +258,11 @@ export function parseContentDisposition(s: string): ContentDisposition {
         }
 
         if (extParam) {
-            e.encoding = eatToken(iter, "'");
-            e.language = eatToken(iter, "'");
-            e.extValue = eatToken(iter, ";", e.encoding || defaultEncoding);
+            e.encoding = p.eat(iter, "'");
+            e.language = p.eat(iter, "'");
+            e.extValue = p.withPercentEncoding(e.encoding).eat(iter, ";");
         } else {
-            e.value = eatToken(iter, ";");
+            e.value = p.eat(iter, ";");
         }
 
     }

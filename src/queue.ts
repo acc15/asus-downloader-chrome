@@ -28,8 +28,13 @@ export default async function queue(link: string): Promise<Status> {
             return dm.queueUrl(url);
         }
 
-        url.name = getFileNameFromContentDisposition(getHeader(resp, HttpHeader.ContentDisposition)) || url.name;
-        console.log(`Detected name for ${url.link}: ${url.name}`);
+        const cdName = getFileNameFromContentDisposition(getHeader(resp, HttpHeader.ContentDisposition));
+        if (cdName) {
+            url.name = cdName;
+            console.log(`Detected filename from Content-Disposition for ${url.link}: ${url.name}`);
+        } else {
+            console.log(`Unable to detect filename from Content-Disposition for ${url.link}`);
+        }
 
         if (!isTorrentFile(getHeader(resp, HttpHeader.ContentType), url.name)) {
             return dm.queueUrl(url);

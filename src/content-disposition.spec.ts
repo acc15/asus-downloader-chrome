@@ -2,32 +2,37 @@ import {expect} from "chai";
 import {
     CharIterator,
     ContentDisposition,
-    decodePercent,
-    decodeToken,
-    eatToken,
+
     getFileNameFromContentDisposition,
-    parseContentDisposition
+    parseContentDisposition, TokenParser
 } from "./content-disposition";
 
 describe("content-disposition", () => {
 
-    it("decodePercent", () => {
-        expect(decodePercent(new CharIterator("%D1%82%D0%B5%D1%81%D1%82%D0%BE%D0%B2%D0%B0%D1%8F %D1%81%D1%82%D1%80%D0%BE%D0%BA%D0%B0. And some letters - also!"), false, "utf-8"))
-            .eq("тестовая строка. And some letters - also!");
-    });
+    describe("TokenParser", () => {
 
-    it("decodeToken", () => {
-        expect(decodeToken(new CharIterator("attachment \"allowed\\\" Quoted values\" and unquoted mixed \"haha ")))
-            .eq("attachment allowed\" Quoted values and unquoted mixed haha ");
-    });
+        const p = TokenParser.createDefault();
 
-    it("eatToken", () => {
-        expect(eatToken(new CharIterator("attachment "), ";")).eq("attachment");
-        expect(eatToken(new CharIterator(" param* = UTF-8'en'test"), "=")).eq("param*");
-        expect(eatToken(new CharIterator("  UTF-8'en'test"), "'")).eq("UTF-8");
-    });
+        it("decode", () => {
+            expect(p.decode(new CharIterator("%D1%82%D0%B5%D1%81%D1%82%D0%BE%D0%B2%D0%B0%D1%8F %D1%81%D1%82%D1%80%D0%BE%D0%BA%D0%B0. And some letters - also!"), false))
+                .eq("тестовая строка. And some letters - also!");
 
-    'attachment; filename=[LimeTorrents.lol][WORLD.PG.ANIME].æ¯\x8Dã\x81\x8Cã\x83\x80ã\x83¼ã\x82¯ã\x82¨ã\x83«ã\x83\x95ã\x81«ã\x81ªã\x81£ã\x81¦ç\x95°ä¸\x96ç\x95\x8Cã\x81\x8Bã\x82\x89æ\x88»ã\x81£ã\x81¦ã\x81\x8Dã\x81\x9Fã\x80\x82.ï½\x9Eã\x82¨ã\x83­ã\x82¨ã\x83­ã\x81§ã\x81\x8Dã\x81¡ã\x82\x83ã\x81\x86.torrent'
+            expect(p.decode(new CharIterator('attachment; filename=[LimeTorrents.lol][WORLD.PG.ANIME].æ¯\x8Dã\x81\x8Cã\x83\x80ã\x83¼ã\x82¯ã\x82¨ã\x83«ã\x83\x95ã\x81«ã\x81ªã\x81£ã\x81¦ç\x95°ä¸\x96ç\x95\x8Cã\x81\x8Bã\x82\x89æ\x88»ã\x81£ã\x81¦ã\x81\x8Dã\x81\x9Fã\x80\x82.ï½\x9Eã\x82¨ã\x83­ã\x82¨ã\x83­ã\x81§ã\x81\x8Dã\x81¡ã\x82\x83ã\x81\x86.torrent'), false))
+                .eq("attachment; filename=[LimeTorrents.lol][WORLD.PG.ANIME].母がダークエルフになって異世界から戻ってきた。.～エロエロできちゃう.torrent");
+        });
+
+        it("parse", () => {
+            expect(p.parse(new CharIterator("attachment \"allowed\\\" Quoted values\" and unquoted mixed \"haha ")))
+                .eq("attachment allowed\" Quoted values and unquoted mixed haha ");
+        });
+
+        it("eat", () => {
+            expect(p.eat(new CharIterator("attachment "), ";")).eq("attachment");
+            expect(p.eat(new CharIterator(" param* = UTF-8'en'test"), "=")).eq("param*");
+            expect(p.eat(new CharIterator("  UTF-8'en'test"), "'")).eq("UTF-8");
+        });
+
+    });
 
     describe("parseContentDisposition", () => {
 
@@ -109,6 +114,14 @@ describe("content-disposition", () => {
                         language: ""
                     }
                 }
+            },
+            'attachment; filename=[LimeTorrents.lol][WORLD.PG.ANIME].æ¯\x8Dã\x81\x8Cã\x83\x80ã\x83¼ã\x82¯ã\x82¨ã\x83«ã\x83\x95ã\x81«ã\x81ªã\x81£ã\x81¦ç\x95°ä¸\x96ç\x95\x8Cã\x81\x8Bã\x82\x89æ\x88»ã\x81£ã\x81¦ã\x81\x8Dã\x81\x9Fã\x80\x82.ï½\x9Eã\x82¨ã\x83­ã\x82¨ã\x83­ã\x81§ã\x81\x8Dã\x81¡ã\x82\x83ã\x81\x86.torrent': {
+                type: "attachment",
+                params: {
+                    filename: {
+                        value: '[LimeTorrents.lol][WORLD.PG.ANIME].母がダークエルフになって異世界から戻ってきた。.～エロエロできちゃう.torrent'
+                    }
+                }
             }
         };
 
@@ -126,6 +139,7 @@ describe("content-disposition", () => {
             "attachment; filename=\"[sq]withquotes.torrent\"": "[sq]withquotes.torrent",
             "attachment; filename*=UTF-8''weird%20%23%20%80%20%3D%20%7B%20%7D%20%3B%20filename.txt": "weird # � = { } ; filename.txt",
             "attachment; filename=\"Alpine%20Raspberry%20Pi%203.16.0%20aarch64%20TAR%20GZ.torrent\"": "Alpine Raspberry Pi 3.16.0 aarch64 TAR GZ.torrent",
+            'attachment; filename=[LimeTorrents.lol][WORLD.PG.ANIME].æ¯\x8Dã\x81\x8Cã\x83\x80ã\x83¼ã\x82¯ã\x82¨ã\x83«ã\x83\x95ã\x81«ã\x81ªã\x81£ã\x81¦ç\x95°ä¸\x96ç\x95\x8Cã\x81\x8Bã\x82\x89æ\x88»ã\x81£ã\x81¦ã\x81\x8Dã\x81\x9Fã\x80\x82.ï½\x9Eã\x82¨ã\x83­ã\x82¨ã\x83­ã\x81§ã\x81\x8Dã\x81¡ã\x82\x83ã\x81\x86.torrent': '[LimeTorrents.lol][WORLD.PG.ANIME].母がダークエルフになって異世界から戻ってきた。.～エロエロできちゃう.torrent',
             "attachment": null,
         }
 
