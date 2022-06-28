@@ -1,16 +1,16 @@
-import {getFileNameFromContentDisposition} from "./content-disposition";
+import {getFileNameFromContentDisposition} from "./content-disposition/content-disposition";
 import DownloadMaster from "./dm";
 import Notifier from "./notifier";
 import {loadOpts} from "./options";
 import {Status} from "./status";
 import {Proto} from "./url";
-import UrlDescriptor from "./url-descriptor";
+import UrlDesc from "./url-desc";
 import {downloadWithProgress, getHeader, HttpHeader, isSuccessfulStatus, isTorrentFile} from "./util";
 
 export default async function queue(link: string): Promise<Status> {
 
     const opts = await loadOpts();
-    const url = new UrlDescriptor(link);
+    const url = new UrlDesc(link);
 
     const notifier = await Notifier.create(url, opts.notificationTimeout);
     const dm = new DownloadMaster(opts, status => notifier.update(status));

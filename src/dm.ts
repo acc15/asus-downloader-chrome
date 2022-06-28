@@ -1,5 +1,5 @@
 import {Options} from "./options";
-import UrlDescriptor from "./url-descriptor";
+import UrlDesc from "./url-desc";
 import {Status} from "./status";
 import {HttpHeader, isSuccessfulStatus} from "./util";
 
@@ -132,7 +132,7 @@ export default class DownloadMaster {
         return result;
     }
 
-    async queueUrl(url: UrlDescriptor) {
+    async queueUrl(url: UrlDesc) {
         console.log(`Queueing file from ${url.link}...`);
 
         const params = new URLSearchParams({
@@ -146,7 +146,7 @@ export default class DownloadMaster {
         return (await this.call(() => fetch(this.opts.url + "/downloadmaster/dm_apply.cgi?" + params))).status;
     }
 
-    async queueTorrent(url: UrlDescriptor, torrent: Blob): Promise<DmResult> {
+    async queueTorrent(url: UrlDesc, torrent: Blob): Promise<DmResult> {
         console.log(`Queueing .torrent from ${url.link}...`);
 
         const fd = new FormData();
@@ -168,7 +168,7 @@ export default class DownloadMaster {
         return (await this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi?" + params))).status;
     }
 
-    async queueTorrentAndConfirm(url: UrlDescriptor, torrent: Blob): Promise<Status> {
+    async queueTorrentAndConfirm(url: UrlDesc, torrent: Blob): Promise<Status> {
         const result = await this.queueTorrent(url, torrent);
         return result.status === Status.ConfirmFiles ? this.confirmAll(result.confirm?.name as string) : result.status;
     }

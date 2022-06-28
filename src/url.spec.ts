@@ -1,22 +1,19 @@
-import {expect} from "chai";
+import {dataEq} from "./test-util.spec";
 import {getProtoByUrl, isMagnetUrl, Proto} from "./url";
 import {testMagnetLink} from "./util.spec";
 
 describe("url", () => {
-    describe("isMagnetUrl", () => {
-        it("must correctly detect magnet urls", () => {
-            expect(isMagnetUrl(testMagnetLink)).is.true;
-            expect(isMagnetUrl("http://abc")).is.false;
-        });
-    });
+    describe("isMagnetUrl", () => dataEq([
+        { data: testMagnetLink, expect: true },
+        { data: "http://abc", expect: false },
+    ], d => isMagnetUrl(d)));
 
-    describe("detectProto", () => {
-        it("must correctly detect magnet urls", () => {
-            expect(getProtoByUrl(testMagnetLink)).eq(Proto.Magnet);
-            expect(getProtoByUrl("ed2k://xxx")).eq(Proto.Ed2k);
-            expect(getProtoByUrl("ftp://xxx")).eq(Proto.Ftp);
-            expect(getProtoByUrl("http://abc")).eq(Proto.Unknown);
-            expect(getProtoByUrl("https://abc")).eq(Proto.Unknown);
-        });
-    });
+    describe("detectProto", () => dataEq([
+        { data: testMagnetLink, expect: Proto.Magnet },
+        { data: "ed2k://xxx", expect: Proto.Ed2k },
+        { data: "ftp://xxx", expect: Proto.Ftp },
+        { data: "http://abc", expect: Proto.Unknown },
+        { data: "https://abc", expect: Proto.Unknown }
+    ], d => getProtoByUrl(d)));
+
 });

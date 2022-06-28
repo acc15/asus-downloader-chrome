@@ -1,4 +1,4 @@
-import {expect} from "chai";
+import {dataEq} from "./test-util.spec";
 import {getFileNameByUrl} from "./url";
 import {isTorrentFile, parseQueryString} from "./util";
 
@@ -7,35 +7,20 @@ export const testMagnetLink2 = "magnet:?xt=urn:btih:B530C9909720F4B8583B020630B6
 
 describe("utils", () => {
 
-    describe("parseQueryString", () => {
-        it("magnet", () => {
-            const qs = parseQueryString(testMagnetLink);
-            expect(qs.get("dn")).eq('Big Buck Bunny');
-        });
-    });
+    describe("parseQueryString", () => dataEq([
+        { data: testMagnetLink, expect: 'Big Buck Bunny' }
+    ], d => parseQueryString(d).get('dn')));
 
-    describe("getFileNameOrUrl", () => {
-        it("magnet", () => {
-            expect(getFileNameByUrl(testMagnetLink)).eq("Big Buck Bunny");
-            expect(getFileNameByUrl(testMagnetLink2)).eq("未実装のラスボス達が仲間になりました。 第01巻 [Mijisso no rasubosutachi ga nakama ni narimashita vol 01]");
-        });
-    });
+    describe("getFileNameOrUrl", () => dataEq([
+        { data: testMagnetLink, expect: "Big Buck Bunny" },
+        { data: testMagnetLink2, expect: "未実装のラスボス達が仲間になりました。 第01巻 [Mijisso no rasubosutachi ga nakama ni narimashita vol 01]" }
+    ], getFileNameByUrl));
 
-    describe("isTorrentFile", () => {
-        it("must correctly detect .torrent files", () => {
-
-            const expectations: Array<[string, string, boolean]> = [
-                ["application/x-bittorrent", "abc.torrent", true],
-                ["application/octet_stream", "Complex name.torrent", true],
-                ["haha", "abc.torrent", false],
-                ["application/x-bittorrent", "test.txt", false]
-            ];
-
-            for (const expectation of expectations) {
-                expect(isTorrentFile(expectation[0], expectation[1])).eq(expectation[2]);
-            }
-
-        });
-    });
+    describe("isTorrentFile", () => dataEq([
+        { data: { contentType: "application/x-bittorrent", fileName: "abc.torrent"}, expect: true },
+        { data: { contentType: "application/octet_stream", fileName: "Complex name.torrent"}, expect: true },
+        { data: { contentType: "haha", fileName: "abc.torrent"}, expect: false },
+        { data: { contentType: "application/x-bittorrent", fileName: "test.txt"}, expect: false },
+    ], d => isTorrentFile(d.contentType, d.fileName)));
 
 });

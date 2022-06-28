@@ -2,7 +2,7 @@ import "./assets/icon.png";
 import "./assets/icon_error.png";
 import "./assets/icon_ok.png";
 import "./assets/icon_warn.png";
-import UrlDescriptor from "./url-descriptor";
+import UrlDesc from "./url-desc";
 
 export const enum Status {
     InProcess,
@@ -17,7 +17,7 @@ export const enum Status {
 }
 
 export interface StatusDescriptor {
-    message: (d: UrlDescriptor) => string;
+    message: (d: UrlDesc) => string;
     icon: string;
     terminal: boolean
 }

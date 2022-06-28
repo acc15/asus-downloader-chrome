@@ -59,3 +59,15 @@ export async function downloadWithProgress(resp: Response, reporter: (cur: numbe
     }
     return new Blob(chunks);
 }
+
+export function decodePercent(str: string): Array<number> {
+    return str.split("%").filter(s => s.length > 0).map(s => parseInt(s, 16));
+}
+
+export function toCharCodes(str: string): Array<number> {
+    const result = [];
+    for (let i = 0; i < str.length; i++) {
+        result.push(str.charCodeAt(i));
+    }
+    return result;
+}

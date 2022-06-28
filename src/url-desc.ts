@@ -1,6 +1,6 @@
 import {getProtoByUrl, getFileNameByUrl, Proto, protoDescriptors} from "./url";
 
-class UrlDescriptor {
+class UrlDesc {
 
     link: string;
     name: string;
@@ -22,4 +22,4 @@ class UrlDescriptor {
 
 }
 
-export default UrlDescriptor;
+export default UrlDesc;

@@ -1,16 +1,16 @@
 import {clearNotification, createNotification, updateNotification} from "./notification";
 import {Status, StatusDescriptor, statusDescriptors} from "./status";
-import UrlDescriptor from "./url-descriptor";
+import UrlDesc from "./url-desc";
 import ButtonOptions = chrome.notifications.ButtonOptions;
 import NotificationOptions = chrome.notifications.NotificationOptions;
 
 export default class Notifier {
 
-    url: UrlDescriptor;
+    url: UrlDesc;
     id: string | undefined = undefined;
     timeout: number;
 
-    public constructor(url: UrlDescriptor, notificationTimeout: number) {
+    public constructor(url: UrlDesc, notificationTimeout: number) {
         this.url = url;
         this.timeout = notificationTimeout;
     }
@@ -52,7 +52,7 @@ export default class Notifier {
         };
     }
 
-    static async create(url: UrlDescriptor, timeout: number, initStatus: Status = Status.InProcess): Promise<Notifier> {
+    static async create(url: UrlDesc, timeout: number, initStatus: Status = Status.InProcess): Promise<Notifier> {
         const n = new Notifier(url, timeout);
         await n.init(initStatus);
         return n;
