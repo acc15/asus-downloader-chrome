@@ -63,7 +63,7 @@
 
  */
 
-import CharRange from "./char-range";
+import CharIterator from "./char-iterator";
 import TokenParser from "./token-parser";
 
 export interface ContentDispositionValue {
@@ -81,7 +81,7 @@ export interface ContentDisposition {
 }
 
 export function parseContentDisposition(s: string): ContentDisposition {
-    const it = new CharRange(s);
+    const it = new CharIterator(s);
 
     const p = TokenParser.createDefault();
     const type = p.parse(it, ";").toLowerCase();

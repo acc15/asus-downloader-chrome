@@ -1,4 +1,4 @@
-import CharRange from "./char-range";
+import CharIterator from "./char-iterator";
 import {decodePercent, toCharCodes} from "../util";
 
 const defaultEncoding = "utf-8";
@@ -62,7 +62,7 @@ export default class TokenParser {
 
             const curChunkType = ch === '%' ? ChunkType.PERCENT
                 : charCode >= 0x80 && charCode <= 0xFF ? ChunkType.UTF8
-                    : ChunkType.PLAIN;
+                : ChunkType.PLAIN;
 
             if (chunkType != curChunkType) {
                 if (chunkStart !== i) {
@@ -82,9 +82,7 @@ export default class TokenParser {
         return result;
     }
 
-    parse(it: CharRange, stop: string): string {
-
-
+    parse(it: CharIterator, stop: string): string {
         while (it.hasNext() && isWhitespace(it.char())) {
             it.skip();
         }

@@ -1,4 +1,4 @@
-export default class CharRange {
+export default class CharIterator {
     value: string;
     start: number;
     end: number;

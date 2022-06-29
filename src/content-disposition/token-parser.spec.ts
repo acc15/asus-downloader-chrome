@@ -1,4 +1,4 @@
-import CharRange from "./char-range";
+import CharIterator from "./char-iterator";
 import {dataEq} from "../test-util.spec";
 import TokenParser from "./token-parser";
 
@@ -33,6 +33,6 @@ describe("token-parser", () => {
         { name: "must keep spaces between quoted chunks", data: { str: " \"\" \"\"  ", stop: ":" }, expect: " " },
         { name: "must keep spaces in quoted chunk", data: { str: " \"   \" ", stop: ":" }, expect: "   " },
         { name: "allows to escape spaces", data: { str: " \\ x\\  ", stop: ":" }, expect: " x " },
-    ], d => p.parse(new CharRange(d.str), d.stop)));
+    ], d => p.parse(new CharIterator(d.str), d.stop)));
 
 });
