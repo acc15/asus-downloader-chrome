@@ -83,7 +83,7 @@ export async function withTimeout(timeout: number, fetchCallback: (signal: Abort
         return await fetchCallback(controller.signal);
     } catch (e) {
         if (e instanceof Error && e.name === "AbortError") {
-            return new Response(null, { status: 408, statusText: `Request timed out in ${timeout}ms` });
+            return new Response(null, { status: 408, statusText: `Request timed out in ${timeout} ms` });
         }
         throw e;
     } finally {
