@@ -1,11 +1,11 @@
 import {Options} from "./options";
 import UrlDesc from "./url-desc";
-import {Status} from "./status";
-import {HttpHeader, isSuccessfulStatus} from "./util";
+import Status from "./status";
+import {HttpHeader, isSuccessfulStatus, withTimeout} from "./util";
 
 const statusMap: { [k: string]: Status } = {
     "BT_ACK_SUCESS=": Status.ConfirmFiles,
-    "ACK_SUCESS": Status.Ok,
+    "ACK_SUCESS": Status.Success,
     "TOTAL_FULL": Status.TaskLimit,
     "BT_EXISTS": Status.Exists,
     "BT_EXIST": Status.Exists,
@@ -32,6 +32,23 @@ export interface DmResult {
 
 function isLoginFailed(status: number) {
     return status === 401 || status === 598;
+}
+
+function isTimeout(status: number) {
+    return status === 408;
+}
+
+function httpStatusToDmStatus(status: number, errorStatus: Status): Status {
+    if (isSuccessfulStatus(status)) {
+        return Status.Success;
+    }
+    if (isLoginFailed(status)) {
+        return Status.LoginFail;
+    }
+    if (isTimeout(status)) {
+        return Status.DmTimeout;
+    }
+    return errorStatus;
 }
 
 export function responseTextToStatus(responseText: string): Status {
@@ -74,11 +91,13 @@ export function parseConfirmFiles(text: string): ConfirmFiles {
 }
 
 async function responseToResult(resp: Response): Promise<DmResult> {
-    if (!isSuccessfulStatus(resp.status)) {
-        return { status: isLoginFailed(resp.status) ? Status.LoginFail : Status.Error };
+    let status = httpStatusToDmStatus(resp.status, Status.Error);
+    if (status !== Status.Success) {
+        return { status };
     }
+
     const text = await resp.text();
-    const status = responseTextToStatus(text);
+    status = responseTextToStatus(text);
     return {
         status,
         confirm: status === Status.ConfirmFiles ? parseConfirmFiles(text) : undefined
@@ -97,7 +116,7 @@ export default class DownloadMaster {
         this.listener = listener;
     }
 
-    public async login(): Promise<boolean> {
+    public async login(): Promise<Status> {
         const fd = new URLSearchParams({
             "flag": "",
             "login_username": btoa(this.opts.user),
@@ -106,33 +125,34 @@ export default class DownloadMaster {
         });
 
         console.log("Login form-data", fd);
-        const resp = await fetch(this.opts.url + "/check.asp", {
+        const resp = await this.withTimeoutAndStatus(Status.Login, (signal) => fetch(`${this.opts.url}/check.asp`, {
             method: "POST",
             headers: {
                 [HttpHeader.ContentType]: "application/x-www-form-urlencoded"
             },
-            body: fd
-        });
-        return isSuccessfulStatus(resp.status);
+            body: fd,
+            signal
+        }));
+        return httpStatusToDmStatus(resp.status, Status.LoginFail);
     }
 
-    private async call(httpCall: () => Promise<Response>): Promise<DmResult> {
-        let resp = await httpCall();
+    private async call(status: Status, httpCall: (signal: AbortSignal | null) => Promise<Response>): Promise<DmResult> {
+        let resp = await this.withTimeoutAndStatus(status, httpCall);
         if (isLoginFailed(resp.status)) {
-            const loginResult = await this.login();
-            if (loginResult) {
-                resp = await httpCall();
+            const loginStatus = await this.login();
+            if (loginStatus !== Status.Success) {
+                return {status: loginStatus};
             }
+            resp = await this.withTimeoutAndStatus(status, httpCall);
         }
 
         const result = await responseToResult(resp);
-        if (this.listener) {
-            await this.listener(result.status);
-        }
+        await this.updateStatus(result.status)
         return result;
     }
 
-    async queueUrl(url: UrlDesc) {
+    async queueUrl(url: UrlDesc): Promise<Status> {
+
         console.log(`Queueing file from ${url.link}...`);
 
         const params = new URLSearchParams({
@@ -143,7 +163,9 @@ export default class DownloadMaster {
             t: "0.7478890386712465"
         }).toString();
 
-        return (await this.call(() => fetch(this.opts.url + "/downloadmaster/dm_apply.cgi?" + params))).status;
+        const resp = await this.call(Status.AddTask, signal =>
+            fetch(`${this.opts.url}/downloadmaster/dm_apply.cgi?${params}`, {signal}));
+        return resp.status;
     }
 
     async queueTorrent(url: UrlDesc, torrent: Blob): Promise<DmResult> {
@@ -152,7 +174,8 @@ export default class DownloadMaster {
         const fd = new FormData();
         fd.append("file", torrent, url.name);
 
-        return this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi", { method: "POST", body: fd}));
+        return this.call(Status.AddTask, signal =>
+            fetch(`${this.opts.url}/downloadmaster/dm_uploadbt.cgi`, { method: "POST", body: fd, signal}));
     }
 
     async confirmAll(filename: string): Promise<Status> {
@@ -165,12 +188,28 @@ export default class DownloadMaster {
             t: "0.36825365996235604"
         }).toString();
 
-        return (await this.call(() => fetch(this.opts.url + "/downloadmaster/dm_uploadbt.cgi?" + params))).status;
+        const resp = await this.call(Status.ConfirmFiles, signal =>
+            fetch(`${this.opts.url}/downloadmaster/dm_uploadbt.cgi?${params}`, {signal}));
+        return resp.status;
     }
 
     async queueTorrentAndConfirm(url: UrlDesc, torrent: Blob): Promise<Status> {
         const result = await this.queueTorrent(url, torrent);
-        return result.status === Status.ConfirmFiles ? this.confirmAll(result.confirm?.name as string) : result.status;
+        if (result.status == Status.ConfirmFiles) {
+            return this.confirmAll(result.confirm?.name as string)
+        }
+        return result.status
+    }
+
+    private updateStatus(status: Status): Promise<void> {
+        return this.listener ? this.listener(status) : Promise.resolve()
+    }
+
+    private async withTimeoutAndStatus(newStatus: Status, httpCall: (signal: AbortSignal | null) => Promise<Response>): Promise<Response> {
+        await this.updateStatus(newStatus);
+        return withTimeout(this.opts.dmTimeout, async (signal) => {
+            return httpCall(signal);
+        });
     }
 
 }

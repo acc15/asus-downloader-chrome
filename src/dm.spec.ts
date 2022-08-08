@@ -1,13 +1,13 @@
 import {expect} from "chai";
 import {parseConfirmFiles, responseTextToStatus} from "./dm";
-import {Status} from "./status";
+import Status from "./status";
 import {dataDriven} from "./test-util.spec";
 
 describe("dm", () => {
 
     describe("responseTextToStatus", () => dataDriven([
         { data: '<script>parent.hideLoading();parent.response_dm_add("BT_EXIST");</script>', expect: Status.Exists },
-        { data: '<script>parent.response_dm_add("ACK_SUCESS");</script>', expect: Status.Ok },
+        { data: '<script>parent.response_dm_add("ACK_SUCESS");</script>', expect: Status.Success },
         { data: '<script>parent.hideLoading();parent.response_dm_add("BT_ACK_SUCESS=");</script>', expect: Status.ConfirmFiles },
         { data: '<script>parent.hideLoading();parent.response_dm_add("DISK_FULL");</script>', expect: Status.DiskFull },
         { data: '<script>parent.hideLoading();parent.response_dm_add("TOTAL_FULL");</script>', expect: Status.TaskLimit },

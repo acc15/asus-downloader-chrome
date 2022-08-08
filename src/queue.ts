@@ -2,10 +2,10 @@ import {getFileNameFromContentDisposition} from "./content-disposition/content-d
 import DownloadMaster from "./dm";
 import Notifier from "./notifier";
 import {loadOpts} from "./options";
-import {Status} from "./status";
+import Status from "./status";
 import {Proto} from "./url";
 import UrlDesc from "./url-desc";
-import {downloadWithProgress, getHeader, HttpHeader, isSuccessfulStatus, isTorrentFile} from "./util";
+import {downloadWithProgress, getHeader, HttpHeader, isSuccessfulStatus, isTorrentFile, withTimeout} from "./util";
 
 export default async function queue(link: string): Promise<Status> {
 
@@ -23,7 +23,7 @@ export default async function queue(link: string): Promise<Status> {
 
         console.log(`Checking URL type. Sending GET request to ${url.link}`);
 
-        const resp = await fetch(url.link);
+        const resp = await withTimeout(opts.requestTimeout, signal => fetch(url.link, {signal}))
         if (!isSuccessfulStatus(resp.status)) {
             return dm.queueUrl(url);
         }

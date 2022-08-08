@@ -38,6 +38,12 @@ https://github.com/acc15/asus-downloader-chrome
 
 # Changelog
 
+## 1.2.0
+
+* Added more intermediate statuses (adding task to DM, logging in DM, DM request timeout) 
+* Added timeouts to all requests (tasks won't hang forever)
+* Added options to customize request timeouts
+
 ## 1.1.0
 
 * Fixed duplicate creation of contextMenu item

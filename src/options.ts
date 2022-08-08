@@ -3,13 +3,17 @@ export interface Options {
     user: string;
     pwd: string;
     notificationTimeout: number;
+    requestTimeout: number;
+    dmTimeout: number;
 }
 
 const defaultOptions: Options = {
     url: "http://router.asus.com:8081",
     user: "admin",
     pwd: "admin",
-    notificationTimeout: 5000
+    notificationTimeout: 5000,
+    requestTimeout: 30000,
+    dmTimeout: 10000
 };
 
 export function normalizeUrl(url: string) {

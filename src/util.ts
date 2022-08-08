@@ -71,3 +71,22 @@ export function toCharCodes(str: string): Array<number> {
     }
     return result;
 }
+
+export async function withTimeout(timeout: number, fetchCallback: (signal: AbortSignal | null) => Promise<Response>): Promise<Response> {
+    if (!Number.isInteger(timeout) || timeout <= 0) {
+        return fetchCallback(null);
+    }
+
+    const controller = new AbortController()
+    const timerId = setTimeout(() => controller.abort(), timeout);
+    try {
+        return await fetchCallback(controller.signal);
+    } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") {
+            return new Response(null, { status: 408, statusText: `Request timed out in ${timeout}ms` });
+        }
+        throw e;
+    } finally {
+        clearTimeout(timerId);
+    }
+}

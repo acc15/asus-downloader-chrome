@@ -33,6 +33,20 @@
             >
         </div>
         <div class="row row-2">
+            <label for="request-timeout">Request timeout (ms)</label>
+            <input id="request-timeout"
+                   type="number"
+                   placeholder="Request timeout (0 or empty means no timeout)"
+                   title="Specifies amount of time (in milliseconds) to automatically abort pending file-type checking requests">
+        </div>
+        <div class="row row-2">
+            <label for="dm-timeout">Download Master timeout (ms)</label>
+            <input id="dm-timeout"
+                   type="number"
+                   placeholder="Download Master timeout (0 or empty means no timeout)"
+                   title="Specifies amount of time (in milliseconds) to automatically abort pending requests to Download Master">
+        </div>
+        <div class="row row-2">
             <div id="status" class="second-col"></div>
         </div>
         <div class="row row-2">

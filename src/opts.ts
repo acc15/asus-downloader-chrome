@@ -11,6 +11,10 @@ function getElementChecked<T extends HTMLElement>(id: string): T {
     return el as T;
 }
 
+function toNumberOrZero(n: number) {
+    return isNaN(n) ? 0 : n
+}
+
 async function onContentLoaded() {
 
     const urlInput = getElementChecked<HTMLInputElement>("url");
@@ -18,17 +22,20 @@ async function onContentLoaded() {
     const userInput = getElementChecked<HTMLInputElement>("user");
     const pwdInput = getElementChecked<HTMLInputElement>("pwd");
     const notificationTimeoutInput = getElementChecked<HTMLInputElement>("notification-timeout");
+    const requestTimeoutInput = getElementChecked<HTMLInputElement>("request-timeout");
+    const dmTimeoutInput = getElementChecked<HTMLInputElement>("dm-timeout");
     const statusDiv = getElementChecked<HTMLDivElement>("status");
     const checkButton = getElementChecked<HTMLButtonElement>("check");
     const form = getElementChecked<HTMLFormElement>("form");
 
     function createOptionsFromInputs(): Options {
-        const notificationTimeout = notificationTimeoutInput.valueAsNumber;
         return {
             url: urlInput.value,
             user: userInput.value,
             pwd: pwdInput.value,
-            notificationTimeout: isNaN(notificationTimeout) ? 0 : notificationTimeout
+            notificationTimeout: toNumberOrZero(notificationTimeoutInput.valueAsNumber),
+            requestTimeout: toNumberOrZero(requestTimeoutInput.valueAsNumber),
+            dmTimeout: toNumberOrZero(dmTimeoutInput.valueAsNumber)
         };
     }
 
@@ -52,6 +59,8 @@ async function onContentLoaded() {
     userInput.value = opts.user;
     pwdInput.value = opts.pwd;
     notificationTimeoutInput.valueAsNumber = opts.notificationTimeout;
+    requestTimeoutInput.valueAsNumber = opts.requestTimeout;
+    dmTimeoutInput.valueAsNumber = opts.dmTimeout;
 
     urlInput.addEventListener("input", () => {
         urlLink.href = urlInput.value;
