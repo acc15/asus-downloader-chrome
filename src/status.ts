@@ -35,7 +35,7 @@ export default class Status {
     }
 
     static readonly InProcess = new Status(d => `Queueing URL ${d.link}...`);
-    static readonly TorrentDownload = new Status(d => `Queueing URL ${d.link}...`);
+    static readonly TorrentDownload = new Status(d => `Downloading .torrent ${d.link}...`);
     static readonly Login = new Status(() => `Logging in to DownloadMaster...`);
     static readonly AddTask = new Status(d => `Adding ${d.description} to DownloadMaster tasks`);
     static readonly ConfirmFiles = new Status(d => `Confirming .torrent files from ${d.link}`);
