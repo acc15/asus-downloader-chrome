@@ -1,13 +1,13 @@
-import {CleanWebpackPlugin} from "clean-webpack-plugin";
+import { CleanWebpackPlugin } from "clean-webpack-plugin";
 import CopyWebpackPlugin from 'copy-webpack-plugin';
+import ESLintPlugin from 'eslint-webpack-plugin';
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import path from "path";
 import webpack from 'webpack';
-import ESLintPlugin from 'eslint-webpack-plugin';
-import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 
-import pkg from './package.json';
 import _ from "lodash";
+import pkg from './package.json';
 
 function hash<T, V>(values: Array<T>, valueMap: (v: T) => V, keyMap: (v: T) => string = k => String(k)): { [k: string]: V } {
     return values.reduce<{ [k: string]: V }>((obj, v) => { obj[keyMap(v)] = valueMap(v); return obj; }, {});
@@ -22,8 +22,6 @@ interface WebpackOpts {
 }
 
 export default (env: any, opts: WebpackOpts) => {
-    console.log(`Extension Version: ${pkg.version}`);
-    console.log(`Build mode: ${opts.mode}`);
 
     const isDev = opts.mode === "development";
     const analyze = Boolean(env.analyze);
@@ -63,7 +61,9 @@ export default (env: any, opts: WebpackOpts) => {
                 extensionVersion: pkg.version
             }),
             new ESLintPlugin({
-                files: ['./src/**/*.ts']
+                files: ['./**/*.ts'],
+                configType: "flat",
+                eslintPath: "eslint/use-at-your-own-risk"
             }),
             new CopyWebpackPlugin({
                 patterns: [
